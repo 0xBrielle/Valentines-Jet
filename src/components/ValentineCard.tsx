@@ -58,8 +58,8 @@ export default function ValentineCard() {
                                 <Heart size={64} fill="currentColor" />
                             </motion.div>
 
-                            <h1 className="text-4xl md:text-5xl font-bold mb-8 text-foreground leading-tight">
-                                Will you be my Valentine?
+                            <h1 className="text-3xl md:text-4xl font-bold mb-8 text-foreground leading-tight px-4">
+                                Can I steal you away for a little love adventure? ❤️
                             </h1>
 
                             <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
@@ -92,8 +92,10 @@ export default function ValentineCard() {
                             <h2 className="text-4xl md:text-5xl font-bold mb-6 text-primary">
                                 Yay! ❤️
                             </h2>
-                            <p className="text-xl md:text-2xl text-foreground">
-                                I knew you'd say yes! You're the best!
+                            <p className="text-lg md:text-xl text-foreground leading-relaxed">
+                                Get ready for cool weather, cuddles, and adventures because we’re heading to Baguio from February 12 – 15 ❤️
+                                <br /><br />
+                                Our stay is all set — just bring yourself, <strong>brielle</strong> and let me take care of the rest.
                             </p>
                             <div className="mt-8 flex justify-center gap-2 text-primary">
                                 {[...Array(5)].map((_, i) => (
