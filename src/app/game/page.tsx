@@ -277,29 +277,41 @@ export default function GamePage() {
                 return prev;
             });
 
-            setCoins(prev => prev.map(c => {
-                if (!c.collected &&
-                    cupidRect.left < c.x + 45 &&
-                    cupidRect.right > c.x &&
-                    cupidRect.top < c.y + 45 &&
-                    cupidRect.bottom > c.y
-                ) {
-                    const newScore = score + 10;
-                    setScore(newScore);
-                    playCoinSound();
+            setCoins(prev => {
+                let milestoneReached = false;
+                const updated = prev.map(c => {
+                    // Tighter circular collision for milk (milk is 45x45, using radius 15 for core)
+                    const milkCenterX = c.x + 22;
+                    const milkCenterY = c.y + 22;
+                    const cupidCenterX = (cupidRect.left + cupidRect.right) / 2;
+                    const cupidCenterY = (cupidRect.top + cupidRect.bottom) / 2;
 
-                    // Check for Boss milestone
-                    const nextMilestone = BOSS_MILESTONES.find(m => newScore >= m && lastBossMilestoneRef.current < m);
-                    if (nextMilestone) {
-                        setIsBossActive(true);
-                        lastBossMilestoneRef.current = nextMilestone;
-                        bossTimerRef.current = Date.now();
+                    const dist = Math.sqrt(Math.pow(milkCenterX - cupidCenterX, 2) + Math.pow(milkCenterY - cupidCenterY, 2));
+
+                    if (!c.collected && dist < 50) { // 50px radius for collection (very fair)
+                        setScore(s => {
+                            const newScore = s + 10;
+                            // Check for Boss milestone using functional update logic
+                            const nextMilestone = BOSS_MILESTONES.find(m => newScore >= m && lastBossMilestoneRef.current < m);
+                            if (nextMilestone) {
+                                milestoneReached = true;
+                                lastBossMilestoneRef.current = nextMilestone;
+                            }
+                            return newScore;
+                        });
+                        playCoinSound();
+                        return { ...c, collected: true };
                     }
+                    return c;
+                });
 
-                    return { ...c, collected: true };
+                if (milestoneReached) {
+                    setIsBossActive(true);
+                    bossTimerRef.current = Date.now();
                 }
-                return c;
-            }));
+
+                return updated;
+            });
 
             // Boss Logic
             if (isBossActive) {
@@ -313,6 +325,8 @@ export default function GamePage() {
 
                 // Shooting Projectiles
                 projectileTimerRef.current += deltaTime;
+                // Use a ref for current score if needed or functional update pattern for projectiles
+                // For simplicity, we'll keep using state since gameLoop is re-created on score change (we should add it to deps)
                 const shootInterval = score >= 1000 ? 500 : score >= 500 ? 600 : score >= 200 ? 800 : score >= 100 ? 1000 : 1200;
 
                 if (projectileTimerRef.current > shootInterval) {
@@ -347,7 +361,7 @@ export default function GamePage() {
 
         lastTimeRef.current = time;
         requestRef.current = requestAnimationFrame(gameLoop);
-    }, [gameState, birdVelocity, birdY, spawnInterval]);
+    }, [gameState, birdVelocity, birdY, spawnInterval, score, isBossActive, bossY]);
 
     useEffect(() => {
         if (gameState === "PLAYING") {
@@ -405,6 +419,9 @@ export default function GamePage() {
                 .drop-shadow-aura {
                     filter: drop-shadow(0 0 15px rgba(255, 20, 147, 0.6)) drop-shadow(0 0 25px rgba(255, 105, 180, 0.4));
                 }
+                .aura-supernova {
+                    filter: drop-shadow(0 0 30px #ffffff) drop-shadow(0 0 60px #ff1493) drop-shadow(0 0 90px #ff69b4);
+                }
                 .drop-shadow-milk {
                     filter: drop-shadow(0 0 15px #32cd32) drop-shadow(0 0 25px #00ff00);
                     animation: milkGlow 2s ease-in-out infinite;
@@ -456,27 +473,41 @@ export default function GamePage() {
                     style={{ left: 40, top: birdY }}
                     animate={{ rotate: birdVelocity * 2 }}
                 >
-                    {/* Aura Effect - Dynamic Scaling */}
+                    {/* Aura Effect - Dynamic Scaling and Multi-Stage */}
                     <motion.div
-                        className="absolute z-10 rounded-full drop-shadow-aura"
+                        className={`absolute z-10 rounded-full ${score >= 500 ? 'aura-supernova' : 'drop-shadow-aura'}`}
                         style={{
-                            inset: `-${40 + (score / 10)}px`,
-                            opacity: 0.4 + Math.min(score / 500, 0.5)
+                            inset: `-${40 + (score / 8)}px`,
+                            opacity: score >= 500 ? 0.9 : 0.4 + Math.min(score / 500, 0.4)
                         }}
                         animate={{
-                            scale: [1, 1.2 + (score / 1000), 1],
-                            rotate: [0, 360]
+                            scale: score >= 500 ? [1, 1.4, 1.1, 1.3, 1] : [1, 1.25, 1],
+                            rotate: score >= 500 ? [0, 720] : [0, 360],
+                            boxShadow: score >= 1000 ? [
+                                "0 0 40px #fff, 0 0 80px #f0f, 0 0 120px #0ff",
+                                "0 0 60px #fff, 0 0 100px #0ff, 0 0 140px #f0f",
+                                "0 0 40px #fff, 0 0 80px #f0f, 0 0 120px #0ff"
+                            ] : "none"
                         }}
                         transition={{
-                            duration: Math.max(1, 3 - (score / 500)),
+                            duration: score >= 500 ? 1.5 : Math.max(1, 3 - (score / 400)),
                             repeat: Infinity,
                             ease: "easeInOut"
                         }}
                     >
-                        <div className="absolute top-0 left-1/2 -translate-x-1/2 text-2xl" style={{ fontSize: `${24 + score / 50}px` }}>✨</div>
-                        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 text-2xl" style={{ fontSize: `${24 + score / 50}px` }}>❤️</div>
-                        <div className="absolute left-0 top-1/2 -translate-y-1/2 text-2xl" style={{ fontSize: `${24 + score / 50}px` }}>💖</div>
-                        <div className="absolute right-0 top-1/2 -translate-y-1/2 text-2xl" style={{ fontSize: `${24 + score / 50}px` }}>✨</div>
+                        <div className="absolute top-0 left-1/2 -translate-x-1/2 text-2xl" style={{ fontSize: `${24 + score / 40}px`, filter: 'brightness(1.5)' }}>✨</div>
+                        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 text-2xl" style={{ fontSize: `${24 + score / 40}px`, filter: 'brightness(1.5)' }}>❤️</div>
+                        <div className="absolute left-0 top-1/2 -translate-y-1/2 text-2xl" style={{ fontSize: `${24 + score / 40}px`, filter: 'brightness(1.5)' }}>💖</div>
+                        <div className="absolute right-0 top-1/2 -translate-y-1/2 text-2xl" style={{ fontSize: `${24 + score / 40}px`, filter: 'brightness(1.5)' }}>✨</div>
+
+                        {/* Divine Rings for high scores */}
+                        {score >= 200 && (
+                            <motion.div
+                                className="absolute inset-0 border-4 border-white/30 rounded-full"
+                                animate={{ scale: [1, 1.5], opacity: [0.5, 0] }}
+                                transition={{ duration: 1, repeat: Infinity }}
+                            />
+                        )}
                     </motion.div>
 
                     <Image
