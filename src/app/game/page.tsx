@@ -498,8 +498,11 @@ export default function GamePage() {
                 </button>
             </Link>
 
-            {/* Score */}
-            <div className="absolute top-6 right-6 z-50 text-3xl font-bold bg-white/50 backdrop-blur-md border border-white/50 px-6 py-2 rounded-2xl shadow-sm text-primary">
+            {/* Score (Memoized-like constant style) */}
+            <div
+                className="absolute top-6 right-6 z-50 text-3xl font-bold bg-white/50 backdrop-blur-md border border-white/50 px-6 py-2 rounded-2xl shadow-sm text-primary select-none pointer-events-none"
+                style={{ transform: 'translate3d(0,0,0)' }}
+            >
                 Score: {score}
             </div>
 
@@ -510,46 +513,34 @@ export default function GamePage() {
             >
                 {/* Cupid Character */}
                 <motion.div
-                    className="absolute z-30 flex items-center justify-center"
-                    style={{ left: 40, top: birdY }}
-                    animate={{ rotate: birdVelocity * 2 }}
+                    className="absolute z-30 flex items-center justify-center transition-transform duration-75"
+                    style={{
+                        left: 40,
+                        top: 0,
+                        transform: `translate3d(0, ${birdY}px, 0) rotate(${birdVelocity * 2}deg)`,
+                        willChange: 'transform'
+                    }}
                 >
-                    {/* Aura Effect - Dynamic Scaling and Multi-Stage */}
-                    <motion.div
-                        className={`absolute z-10 rounded-full ${score >= 500 ? 'aura-supernova' : 'drop-shadow-aura'}`}
+                    {/* Aura Effect - GPU Optimized */}
+                    <div
+                        className={`absolute z-10 rounded-full transition-all duration-500 ${score >= 500 ? 'aura-supernova' : 'drop-shadow-aura'}`}
                         style={{
-                            inset: `-${40 + (score / 8)}px`,
-                            opacity: score >= 500 ? 0.9 : 0.4 + Math.min(score / 500, 0.4)
-                        }}
-                        animate={{
-                            scale: score >= 500 ? [1, 1.4, 1.1, 1.3, 1] : [1, 1.25, 1],
-                            rotate: score >= 500 ? [0, 720] : [0, 360],
-                            boxShadow: score >= 1000 ? [
-                                "0 0 40px #fff, 0 0 80px #f0f, 0 0 120px #0ff",
-                                "0 0 60px #fff, 0 0 100px #0ff, 0 0 140px #f0f",
-                                "0 0 40px #fff, 0 0 80px #f0f, 0 0 120px #0ff"
-                            ] : "none"
-                        }}
-                        transition={{
-                            duration: score >= 500 ? 1.5 : Math.max(1, 3 - (score / 400)),
-                            repeat: Infinity,
-                            ease: "easeInOut"
+                            width: 180 + (score / 4),
+                            height: 180 + (score / 4),
+                            opacity: score >= 500 ? 0.9 : 0.4 + Math.min(score / 500, 0.4),
+                            transform: `translate3d(-50%, -50%, 0)`,
+                            left: '50%',
+                            top: '50%',
+                            willChange: 'transform, opacity',
+                            boxShadow: score >= 1000 ?
+                                `0 0 40px #fff, 0 0 80px #f0f, 0 0 120px #0ff` : "none"
                         }}
                     >
-                        <div className="absolute top-0 left-1/2 -translate-x-1/2 text-2xl" style={{ fontSize: `${24 + score / 40}px`, filter: 'brightness(1.5)' }}>✨</div>
-                        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 text-2xl" style={{ fontSize: `${24 + score / 40}px`, filter: 'brightness(1.5)' }}>❤️</div>
-                        <div className="absolute left-0 top-1/2 -translate-y-1/2 text-2xl" style={{ fontSize: `${24 + score / 40}px`, filter: 'brightness(1.5)' }}>💖</div>
-                        <div className="absolute right-0 top-1/2 -translate-y-1/2 text-2xl" style={{ fontSize: `${24 + score / 40}px`, filter: 'brightness(1.5)' }}>✨</div>
-
-                        {/* Divine Rings for high scores */}
-                        {score >= 200 && (
-                            <motion.div
-                                className="absolute inset-0 border-4 border-white/30 rounded-full"
-                                animate={{ scale: [1, 1.5], opacity: [0.5, 0] }}
-                                transition={{ duration: 1, repeat: Infinity }}
-                            />
-                        )}
-                    </motion.div>
+                        <div className="absolute top-0 left-1/2 -translate-x-1/2 text-2xl" style={{ fontSize: `${24 + score / 40}px` }}>✨</div>
+                        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 text-2xl" style={{ fontSize: `${24 + score / 40}px` }}>❤️</div>
+                        <div className="absolute left-0 top-1/2 -translate-y-1/2 text-2xl" style={{ fontSize: `${24 + score / 40}px` }}>💖</div>
+                        <div className="absolute right-0 top-1/2 -translate-y-1/2 text-2xl" style={{ fontSize: `${24 + score / 40}px` }}>✨</div>
+                    </div>
 
                     <Image
                         src={cupidFrame}
@@ -564,19 +555,24 @@ export default function GamePage() {
 
                 {/* Obstacles (Fences) */}
                 {obstacles.map(o => (
-                    <div key={o.id}>
+                    <div
+                        key={o.id}
+                        className="absolute inset-0 z-20 pointer-events-none"
+                    >
                         {/* Top Fence */}
                         <div
-                            className="absolute z-20"
+                            className="absolute"
                             style={{
-                                left: o.x,
+                                left: 0,
                                 top: 0,
                                 width: 100,
                                 height: o.topHeight,
+                                transform: `translate3d(${o.x}px, 0, 0)`,
+                                willChange: 'transform'
                             }}
                         >
                             <div className="relative w-full h-full overflow-hidden flex items-end justify-center">
-                                <div className="absolute top-0 bottom-0 flex flex-col scale-y-[-1] pointer-events-none select-none">
+                                <div className="absolute top-0 bottom-0 flex flex-col scale-y-[-1]">
                                     <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} draggable={false} />
                                     <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" draggable={false} />
                                     <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" draggable={false} />
@@ -592,15 +588,17 @@ export default function GamePage() {
                         </div>
                         {/* Bottom Fence */}
                         <div
-                            className="absolute z-20"
+                            className="absolute"
                             style={{
-                                left: o.x,
+                                left: 0,
                                 bottom: 0,
                                 width: 100,
                                 height: o.bottomHeight,
+                                transform: `translate3d(${o.x}px, 0, 0)`,
+                                willChange: 'transform'
                             }}
                         >
-                            <div className="relative w-full h-full overflow-hidden flex flex-col pointer-events-none select-none">
+                            <div className="relative w-full h-full overflow-hidden flex flex-col">
                                 <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} draggable={false} />
                                 <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" draggable={false} />
                                 <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" draggable={false} />
@@ -621,9 +619,14 @@ export default function GamePage() {
                     <motion.div
                         key={c.id}
                         className={`absolute z-20 ${c.isVacuumed ? 'milk-vibrate' : ''}`}
-                        style={{ left: c.x, top: c.y }}
+                        style={{
+                            left: 0,
+                            top: 0,
+                            transform: `translate3d(${c.x}px, ${c.y}px, 0)`,
+                            willChange: 'transform'
+                        }}
                         animate={c.isVacuumed ? {} : {
-                            y: [c.y, c.y - 12, c.y],
+                            y: [0, -12, 0],
                             rotate: 360
                         }}
                         transition={{
@@ -643,7 +646,11 @@ export default function GamePage() {
                             animate={{ x: window.innerWidth - 180, opacity: 1 }}
                             exit={{ x: window.innerWidth + 200, opacity: 0 }}
                             className="absolute z-35"
-                            style={{ top: bossY }}
+                            style={{
+                                top: 0,
+                                transform: `translate3d(0, ${bossY}px, 0)`,
+                                willChange: 'transform'
+                            }}
                         >
                             <div className="relative">
                                 {/* Fire Flare Aura for Boss */}
@@ -663,7 +670,12 @@ export default function GamePage() {
                     <div
                         key={p.id}
                         className="absolute z-35"
-                        style={{ left: p.x, top: p.y }}
+                        style={{
+                            left: 0,
+                            top: 0,
+                            transform: `translate3d(${p.x}px, ${p.y}px, 0)`,
+                            willChange: 'transform'
+                        }}
                     >
                         <Image
                             src={p.type === "book" ? book : ball}
