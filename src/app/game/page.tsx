@@ -227,7 +227,7 @@ export default function GamePage() {
     }, [gameState, gameLoop]);
 
     return (
-        <div className="relative w-full h-screen overflow-hidden bg-slate-900 text-foreground font-sans">
+        <div className="relative w-full h-screen overflow-hidden bg-slate-900 text-foreground font-sans select-none touch-none">
             {/* Scrolling Background */}
             <div
                 className="absolute inset-0 z-0 pointer-events-none"
@@ -283,8 +283,9 @@ export default function GamePage() {
                         alt="Cupid"
                         width={180}
                         height={180}
-                        className="drop-shadow-lg"
+                        className="drop-shadow-lg pointer-events-none select-none"
                         priority
+                        draggable={false}
                     />
                 </motion.div>
 
@@ -302,17 +303,17 @@ export default function GamePage() {
                             }}
                         >
                             <div className="relative w-full h-full overflow-hidden flex items-end justify-center">
-                                <div className="absolute top-0 bottom-0 flex flex-col scale-y-[-1]">
-                                    <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} />
-                                    <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" />
-                                    <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" />
-                                    <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" />
-                                    <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" />
-                                    <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" />
-                                    <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" />
-                                    <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" />
-                                    <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" />
-                                    <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" />
+                                <div className="absolute top-0 bottom-0 flex flex-col scale-y-[-1] pointer-events-none select-none">
+                                    <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} draggable={false} />
+                                    <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" draggable={false} />
+                                    <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" draggable={false} />
+                                    <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" draggable={false} />
+                                    <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" draggable={false} />
+                                    <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" draggable={false} />
+                                    <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" draggable={false} />
+                                    <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" draggable={false} />
+                                    <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" draggable={false} />
+                                    <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" draggable={false} />
                                 </div>
                             </div>
                         </div>
@@ -326,17 +327,17 @@ export default function GamePage() {
                                 height: o.bottomHeight,
                             }}
                         >
-                            <div className="relative w-full h-full overflow-hidden flex flex-col">
-                                <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} />
-                                <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" />
-                                <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" />
-                                <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" />
-                                <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" />
-                                <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" />
-                                <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" />
-                                <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" />
-                                <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" />
-                                <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" />
+                            <div className="relative w-full h-full overflow-hidden flex flex-col pointer-events-none select-none">
+                                <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} draggable={false} />
+                                <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" draggable={false} />
+                                <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" draggable={false} />
+                                <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" draggable={false} />
+                                <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" draggable={false} />
+                                <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" draggable={false} />
+                                <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" draggable={false} />
+                                <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" draggable={false} />
+                                <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" draggable={false} />
+                                <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" draggable={false} />
                             </div>
                         </div>
                     </div>
@@ -357,7 +358,7 @@ export default function GamePage() {
                             rotate: { repeat: Infinity, duration: 3, ease: "linear" }
                         }}
                     >
-                        <Image src={milk} alt="milk coin" width={45} height={45} className="drop-shadow-glow" />
+                        <Image src={milk} alt="milk coin" width={45} height={45} className="drop-shadow-glow pointer-events-none select-none" draggable={false} />
                     </motion.div>
                 ))}
             </div>
