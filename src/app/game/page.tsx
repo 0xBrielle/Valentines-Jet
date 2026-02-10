@@ -405,6 +405,14 @@ export default function GamePage() {
                 .drop-shadow-aura {
                     filter: drop-shadow(0 0 15px rgba(255, 20, 147, 0.6)) drop-shadow(0 0 25px rgba(255, 105, 180, 0.4));
                 }
+                .drop-shadow-milk {
+                    filter: drop-shadow(0 0 15px #32cd32) drop-shadow(0 0 25px #00ff00);
+                    animation: milkGlow 2s ease-in-out infinite;
+                }
+                @keyframes milkGlow {
+                    0%, 100% { filter: drop-shadow(0 0 10px #32cd32) drop-shadow(0 0 20px #00ff00); }
+                    50% { filter: drop-shadow(0 0 20px #7cfc00) drop-shadow(0 0 35px #32cd32); }
+                }
                 @keyframes firePulse {
                     0%, 100% { filter: drop-shadow(0 0 25px #ff4500) drop-shadow(0 0 45px #ff0000); transform: scale(1); }
                     50% { filter: drop-shadow(0 0 35px #ff8c00) drop-shadow(0 0 60px #ff4500); transform: scale(1.05); }
@@ -448,24 +456,27 @@ export default function GamePage() {
                     style={{ left: 40, top: birdY }}
                     animate={{ rotate: birdVelocity * 2 }}
                 >
-                    {/* Aura Effect */}
+                    {/* Aura Effect - Dynamic Scaling */}
                     <motion.div
-                        className="absolute inset-[-40px] z-10 rounded-full drop-shadow-aura opacity-60"
+                        className="absolute z-10 rounded-full drop-shadow-aura"
+                        style={{
+                            inset: `-${40 + (score / 10)}px`,
+                            opacity: 0.4 + Math.min(score / 500, 0.5)
+                        }}
                         animate={{
-                            scale: [1, 1.2, 1],
-                            opacity: [0.4, 0.8, 0.4],
+                            scale: [1, 1.2 + (score / 1000), 1],
                             rotate: [0, 360]
                         }}
                         transition={{
-                            duration: 3,
+                            duration: Math.max(1, 3 - (score / 500)),
                             repeat: Infinity,
                             ease: "easeInOut"
                         }}
                     >
-                        <div className="absolute top-0 left-1/2 -translate-x-1/2 text-2xl">✨</div>
-                        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 text-2xl">❤️</div>
-                        <div className="absolute left-0 top-1/2 -translate-y-1/2 text-2xl">💖</div>
-                        <div className="absolute right-0 top-1/2 -translate-y-1/2 text-2xl">✨</div>
+                        <div className="absolute top-0 left-1/2 -translate-x-1/2 text-2xl" style={{ fontSize: `${24 + score / 50}px` }}>✨</div>
+                        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 text-2xl" style={{ fontSize: `${24 + score / 50}px` }}>❤️</div>
+                        <div className="absolute left-0 top-1/2 -translate-y-1/2 text-2xl" style={{ fontSize: `${24 + score / 50}px` }}>💖</div>
+                        <div className="absolute right-0 top-1/2 -translate-y-1/2 text-2xl" style={{ fontSize: `${24 + score / 50}px` }}>✨</div>
                     </motion.div>
 
                     <Image
@@ -548,7 +559,7 @@ export default function GamePage() {
                             rotate: { repeat: Infinity, duration: 3, ease: "linear" }
                         }}
                     >
-                        <Image src={milk} alt="milk coin" width={45} height={45} className="drop-shadow-glow pointer-events-none select-none" draggable={false} />
+                        <Image src={milk} alt="milk coin" width={45} height={45} className="drop-shadow-milk pointer-events-none select-none" draggable={false} />
                     </motion.div>
                 ))}
 
