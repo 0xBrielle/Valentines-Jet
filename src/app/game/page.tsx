@@ -10,6 +10,7 @@ import b1 from "../../assets/images/b1.png";
 import b2 from "../../assets/images/b2.png";
 import milk from "../../assets/images/milk.png";
 import fence from "../../assets/images/fence.png";
+import gameBg from "../../assets/images/background.jpg";
 
 const GRAVITY = 0.6;
 const JUMP_STRENGTH = -8;
@@ -226,9 +227,29 @@ export default function GamePage() {
     }, [gameState, gameLoop]);
 
     return (
-        <div className="relative w-full h-screen overflow-hidden bg-gradient-to-b from-blue-100 to-pink-100 text-foreground font-sans">
-            {/* Background elements */}
-            <div className="absolute inset-0 z-0 opacity-20 pointer-events-none">
+        <div className="relative w-full h-screen overflow-hidden bg-slate-900 text-foreground font-sans">
+            {/* Scrolling Background */}
+            <div
+                className="absolute inset-0 z-0 pointer-events-none"
+                style={{
+                    backgroundImage: `url(${gameBg.src})`,
+                    backgroundSize: 'auto 100%',
+                    backgroundRepeat: 'repeat-x',
+                    animation: gameState === 'PLAYING' ? 'scrollBackground 20s linear infinite' : 'none',
+                    opacity: 0.8
+                }}
+            />
+
+            {/* Global style for background scroll animation */}
+            <style jsx global>{`
+                @keyframes scrollBackground {
+                    from { background-position: 0 0; }
+                    to { background-position: -2000px 0; }
+                }
+            `}</style>
+
+            {/* Background elements overlay */}
+            <div className="absolute inset-0 z-1 opacity-20 pointer-events-none bg-gradient-to-b from-blue-900/20 to-pink-900/20">
                 <div className="absolute top-10 left-10 w-32 h-32 bg-white rounded-full blur-3xl animate-pulse" />
                 <div className="absolute bottom-20 right-20 w-48 h-48 bg-pink-300 rounded-full blur-3xl animate-pulse" />
             </div>

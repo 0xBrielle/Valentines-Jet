@@ -33,7 +33,7 @@ export default function FlyingCupid({ delay = 0 }: FlyingCupidProps) {
             const startY = Math.random() * 80 + 10; // 10vh to 90vh
             const endY = Math.random() * 80 + 10;
             // Lessened speed by 70% (duration is ~3.3x longer than 3-5s)
-            const duration = Math.random() * 5 + 10; // 10-15 seconds
+            const duration = Math.random() * 10 + 25; // 25-35 seconds (was 10-15s)
 
             // Randomly start from left or right
             const startFromLeft = Math.random() > 0.5;
