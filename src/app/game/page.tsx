@@ -9,9 +9,10 @@ import { ChevronLeft, Play, RotateCcw, Trophy, User } from "lucide-react";
 import b1 from "../../assets/images/b1.png";
 import b2 from "../../assets/images/b2.png";
 import c1 from "../../assets/images/c1.png";
-import milk from "../../assets/images/milk.png";
+import milk from "../../assets/images/milkbottle.png";
 import fence from "../../assets/images/fence.png";
 import book from "../../assets/images/book.png";
+import ball from "../../assets/images/ball.png";
 import gameBg from "../../assets/images/background.jpg";
 
 const GRAVITY = 0.21;
@@ -59,7 +60,8 @@ export default function GamePage() {
     // Boss States
     const [isBossActive, setIsBossActive] = useState(false);
     const [bossY, setBossY] = useState(250);
-    const [projectiles, setProjectiles] = useState<{ id: number; x: number; y: number }[]>([]);
+    const [projectiles, setProjectiles] = useState<{ id: number; x: number; y: number; type: "book" | "ball" }[]>([]);
+    const [bossShotsFired, setBossShotsFired] = useState(0);
 
     const gameContainerRef = useRef<HTMLDivElement>(null);
     const requestRef = useRef<number>(0);
@@ -160,6 +162,7 @@ export default function GamePage() {
         setSpawnInterval(Math.random() * 1000 + 1500); // 1.5 - 2.5 seconds
         setIsBossActive(false);
         setProjectiles([]);
+        setBossShotsFired(0);
         lastBossMilestoneRef.current = 0;
     }, []);
 
@@ -345,9 +348,13 @@ export default function GamePage() {
 
             // Boss Logic
             if (isBossActive) {
-                // Boss disappears after 10 seconds
-                if (Date.now() - bossTimerRef.current > 10000) {
+                // Boss disappears after 15 seconds OR shots finished
+                const milestoneIndex = BOSS_MILESTONES.indexOf(lastBossMilestoneRef.current);
+                const ammoLimit = (milestoneIndex + 1) * 5;
+
+                if (Date.now() - bossTimerRef.current > 15000 || bossShotsFired >= ammoLimit) {
                     setIsBossActive(false);
+                    setBossShotsFired(0);
                 }
 
                 // Boss movement (bouncing)
@@ -355,14 +362,14 @@ export default function GamePage() {
 
                 // Shooting Projectiles
                 projectileTimerRef.current += deltaTime;
-                // Use a ref for current score if needed or functional update pattern for projectiles
-                // For simplicity, we'll keep using state since gameLoop is re-created on score change (we should add it to deps)
                 const shootInterval = score >= 1000 ? 500 : score >= 500 ? 600 : score >= 200 ? 800 : score >= 100 ? 1000 : 1200;
 
-                if (projectileTimerRef.current > shootInterval) {
+                if (projectileTimerRef.current > shootInterval && isBossActive) {
                     projectileTimerRef.current = 0;
                     const bossX = window.innerWidth - 180;
-                    setProjectiles(prev => [...prev, { id: Date.now(), x: bossX, y: bossY + 40 }]);
+                    const type = Math.random() > 0.5 ? "book" : "ball";
+                    setProjectiles(prev => [...prev, { id: Date.now(), x: bossX, y: bossY + 40, type }]);
+                    setBossShotsFired(prev => prev + 1);
                 }
             }
 
@@ -375,11 +382,12 @@ export default function GamePage() {
 
                 // Collision with Cupid
                 for (const p of updated) {
+                    const pSize = (p as any).type === "book" ? 30 : 60; // Book is smaller now
                     if (
                         p.x < cupidRect.right &&
-                        p.x + 60 > cupidRect.left &&
+                        p.x + pSize > cupidRect.left &&
                         p.y < cupidRect.bottom &&
-                        p.y + 60 > cupidRect.top
+                        p.y + pSize > cupidRect.top
                     ) {
                         setGameState("GAME_OVER");
                         saveScore(score);
@@ -391,7 +399,7 @@ export default function GamePage() {
 
         lastTimeRef.current = time;
         requestRef.current = requestAnimationFrame(gameLoop);
-    }, [gameState, birdVelocity, birdY, spawnInterval, score, isBossActive, bossY]);
+    }, [gameState, birdVelocity, birdY, spawnInterval, score, isBossActive, bossY, bossShotsFired]);
 
     useEffect(() => {
         if (gameState === "PLAYING") {
@@ -650,14 +658,21 @@ export default function GamePage() {
                     )}
                 </AnimatePresence>
 
-                {/* Projectiles (Books) */}
+                {/* Projectiles (Books / Balls) */}
                 {projectiles.map(p => (
                     <div
                         key={p.id}
                         className="absolute z-35"
                         style={{ left: p.x, top: p.y }}
                     >
-                        <Image src={book} alt="book" width={60} height={60} className="drop-shadow-projectile animate-spin-slow pointer-events-none select-none" draggable={false} />
+                        <Image
+                            src={p.type === "book" ? book : ball}
+                            alt={p.type}
+                            width={p.type === "book" ? 30 : 60}
+                            height={p.type === "book" ? 30 : 60}
+                            className="drop-shadow-projectile animate-spin-slow pointer-events-none select-none"
+                            draggable={false}
+                        />
                     </div>
                 ))}
 
