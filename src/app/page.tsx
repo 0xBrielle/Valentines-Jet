@@ -7,7 +7,9 @@ export default function Home() {
   return (
     <main className="min-h-screen relative bg-background overflow-hidden">
       <BackgroundImageGrid />
-      <FlyingCupid />
+      <FlyingCupid delay={0} />
+      <FlyingCupid delay={1.5} />
+      <FlyingCupid delay={3} />
       <FloatingHearts />
       <div className="relative z-10 flex items-center justify-center min-h-screen pointer-events-none">
         <ValentineCard />
