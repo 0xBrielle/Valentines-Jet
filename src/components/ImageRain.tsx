@@ -32,7 +32,7 @@ export default function ImageRain({ triggerCount }: { triggerCount: number }) {
             image: selectedImage,
             duration: Math.random() * 2 + 1, // 1-3 seconds
             delay: Math.random() * 2, // 0-2 seconds delay
-            size: Math.random() * 40 + 20, // 20-60px
+            size: Math.random() * 120 + 60, // 60-180px (3x bigger)
         }));
 
         setItems((prev) => [...prev, ...newItems]);
@@ -59,7 +59,7 @@ export default function ImageRain({ triggerCount }: { triggerCount: number }) {
                         animate={{
                             y: "110vh",
                             opacity: [0, 1, 1, 0],
-                            rotate: 360
+                            rotate: 180 // 50% less than 360
                         }}
                         transition={{
                             duration: item.duration,
