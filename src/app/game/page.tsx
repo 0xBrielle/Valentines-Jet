@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, Play, RotateCcw } from "lucide-react";
+import { ChevronLeft, Play, RotateCcw, Trophy, User } from "lucide-react";
 
 import b1 from "../../assets/images/b1.png";
 import b2 from "../../assets/images/b2.png";
@@ -30,8 +30,16 @@ interface Coin {
     collected: boolean;
 }
 
+interface ScoreEntry {
+    name: string;
+    score: number;
+    date: string;
+}
+
 export default function GamePage() {
-    const [gameState, setGameState] = useState<"START" | "PLAYING" | "GAME_OVER">("START");
+    const [gameState, setGameState] = useState<"MENU" | "NAME_INPUT" | "LEADERBOARD" | "PLAYING" | "GAME_OVER">("MENU");
+    const [playerName, setPlayerName] = useState("");
+    const [highScores, setHighScores] = useState<ScoreEntry[]>([]);
     const [birdY, setBirdY] = useState(250);
     const [birdVelocity, setBirdVelocity] = useState(0);
     const [score, setScore] = useState(0);
@@ -53,6 +61,31 @@ export default function GamePage() {
         return () => clearInterval(interval);
     }, []);
 
+    // Load leaderboard and last player name
+    useEffect(() => {
+        const savedScores = localStorage.getItem("flappy_brielle_scores");
+        if (savedScores) setHighScores(JSON.parse(savedScores));
+
+        const lastPlayer = localStorage.getItem("flappy_brielle_last_name");
+        if (lastPlayer) setPlayerName(lastPlayer);
+    }, []);
+
+    const saveScore = useCallback((finalScore: number) => {
+        if (!playerName) return;
+        const newEntry: ScoreEntry = {
+            name: playerName,
+            score: finalScore,
+            date: new Date().toLocaleDateString()
+        };
+        const updatedScores = [...highScores, newEntry]
+            .sort((a, b) => b.score - a.score)
+            .slice(0, 10); // Keep top 10
+
+        setHighScores(updatedScores);
+        localStorage.setItem("flappy_brielle_scores", JSON.stringify(updatedScores));
+        localStorage.setItem("flappy_brielle_last_name", playerName);
+    }, [highScores, playerName]);
+
     const playCoinSound = () => {
         try {
             const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -72,18 +105,20 @@ export default function GamePage() {
         }
     };
 
+    const startGame = useCallback(() => {
+        setGameState("PLAYING");
+        setScore(0);
+        setObstacles([]);
+        setCoins([]);
+        setBirdY(250);
+        setBirdVelocity(0);
+        obstacleTimerRef.current = 0;
+        setSpawnInterval(Math.random() * 1000 + 1500); // 1.5 - 2.5 seconds
+    }, []);
+
     const jump = useCallback(() => {
         if (gameState === "PLAYING") {
             setBirdVelocity(JUMP_STRENGTH);
-        } else if (gameState === "START") {
-            setGameState("PLAYING");
-            setScore(0);
-            setObstacles([]);
-            setCoins([]);
-            setBirdY(250);
-            setBirdVelocity(0);
-            obstacleTimerRef.current = 0;
-            setSpawnInterval(Math.random() * 1000 + 1500); // 1.5 - 2.5 seconds
         }
     }, [gameState]);
 
@@ -110,6 +145,7 @@ export default function GamePage() {
                 const containerHeight = gameContainerRef.current?.clientHeight || 600;
                 if (newY < -50 || newY > containerHeight - 120) {
                     setGameState("GAME_OVER");
+                    saveScore(score);
                     return prev;
                 }
                 return newY;
@@ -193,6 +229,7 @@ export default function GamePage() {
                         (cupidRect.left < bottomRect.right && cupidRect.right > bottomRect.left && cupidRect.bottom > bottomRect.top)
                     ) {
                         setGameState("GAME_OVER");
+                        saveScore(score);
                     }
                 }
                 return prev;
@@ -245,6 +282,20 @@ export default function GamePage() {
                 @keyframes scrollBackground {
                     from { background-position: 0 0; }
                     to { background-position: -2000px 0; }
+                }
+                .custom-scrollbar::-webkit-scrollbar {
+                    width: 6px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-track {
+                    background: #f1f1f1;
+                    border-radius: 10px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb {
+                    background: #ff7eb9;
+                    border-radius: 10px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                    background: #ff4d9d;
                 }
             `}</style>
 
@@ -365,27 +416,150 @@ export default function GamePage() {
 
             {/* Overlays */}
             <AnimatePresence>
-                {gameState === "START" && (
+                {gameState === "MENU" && (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-black/30 backdrop-blur-sm px-6"
+                        exit={{ opacity: 0 }}
+                        className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm px-6"
                     >
                         <motion.div
                             initial={{ scale: 0.8 }}
                             animate={{ scale: 1 }}
-                            className="bg-white p-8 rounded-3xl shadow-2xl text-center max-w-sm"
+                            className="bg-white p-8 rounded-3xl shadow-2xl text-center max-w-sm w-full"
                         >
-                            <h2 className="text-3xl font-extrabold mb-4 text-primary">Flappy Brielle</h2>
+                            <h2 className="text-4xl font-extrabold mb-4 text-primary">Flappy Brielle</h2>
                             <p className="text-gray-600 mb-8 font-medium">
                                 Help Cupid collect milk coins while avoiding the fence obstacles! 🍼✨
-                                <br />Press **Space** or **Click** to fly.
                             </p>
+
+                            <div className="flex flex-col gap-4">
+                                <button
+                                    onClick={() => setGameState("NAME_INPUT")}
+                                    className="flex items-center justify-center gap-3 w-full py-4 bg-primary text-white rounded-2xl font-bold text-xl hover:bg-primary-hover transition-colors shadow-lg"
+                                >
+                                    <Play fill="currentColor" /> Start Game
+                                </button>
+                                <button
+                                    onClick={() => setGameState("LEADERBOARD")}
+                                    className="flex items-center justify-center gap-3 w-full py-4 bg-white border-2 border-primary text-primary rounded-2xl font-bold text-xl hover:bg-pink-50 transition-colors"
+                                >
+                                    <Trophy size={24} /> Leaderboard
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+
+                {gameState === "NAME_INPUT" && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm px-6"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.8 }}
+                            animate={{ scale: 1 }}
+                            className="bg-white p-8 rounded-3xl shadow-2xl text-center max-w-sm w-full"
+                        >
+                            <div className="flex justify-center mb-6">
+                                <div className="p-4 bg-pink-100 rounded-full text-primary">
+                                    <User size={40} />
+                                </div>
+                            </div>
+                            <h2 className="text-2xl font-extrabold mb-4 text-slate-800">Enter Player Name</h2>
+                            <input
+                                type="text"
+                                value={playerName}
+                                onChange={(e) => setPlayerName(e.target.value)}
+                                placeholder="Your Name"
+                                className="w-full px-4 py-4 rounded-xl border-2 border-slate-200 mb-6 text-center text-xl focus:border-primary outline-none transition-colors"
+                                autoFocus
+                            />
+
+                            <div className="flex flex-col gap-3">
+                                <button
+                                    onClick={startGame}
+                                    disabled={!playerName.trim()}
+                                    className="flex items-center justify-center gap-3 w-full py-4 bg-primary text-white rounded-2xl font-bold text-xl hover:bg-primary-hover transition-colors shadow-lg disabled:opacity-50"
+                                >
+                                    Start !
+                                </button>
+                                <button
+                                    onClick={() => setGameState("MENU")}
+                                    className="w-full py-3 text-slate-500 font-bold hover:text-slate-800 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+
+                {gameState === "LEADERBOARD" && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm px-6"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.8 }}
+                            animate={{ scale: 1 }}
+                            className="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col"
+                        >
+                            <div className="flex items-center justify-between mb-6">
+                                <h2 className="text-2xl font-extrabold text-primary flex items-center gap-2">
+                                    <Trophy size={28} /> High Scores
+                                </h2>
+                                <button
+                                    onClick={() => setGameState("MENU")}
+                                    className="p-2 hover:bg-slate-100 rounded-full"
+                                >
+                                    <ChevronLeft size={24} />
+                                </button>
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto mb-6 pr-2 custom-scrollbar">
+                                {highScores.length > 0 ? (
+                                    <div className="space-y-3">
+                                        {highScores.map((entry, index) => (
+                                            <div
+                                                key={index}
+                                                className={`flex items-center justify-between p-4 rounded-xl border ${index === 0 ? 'bg-yellow-50 border-yellow-200' :
+                                                    index === 1 ? 'bg-slate-50 border-slate-200' :
+                                                        index === 2 ? 'bg-orange-50 border-orange-200' : 'bg-white border-slate-100'
+                                                    }`}
+                                            >
+                                                <div className="flex items-center gap-4">
+                                                    <span className={`text-xl font-black w-6 ${index === 0 ? 'text-yellow-600' :
+                                                        index === 1 ? 'text-slate-500' :
+                                                            index === 2 ? 'text-orange-600' : 'text-slate-400'
+                                                        }`}>
+                                                        {index + 1}
+                                                    </span>
+                                                    <div>
+                                                        <p className="font-bold text-slate-800">{entry.name}</p>
+                                                        <p className="text-xs text-slate-400">{entry.date}</p>
+                                                    </div>
+                                                </div>
+                                                <span className="text-2xl font-black text-primary">{entry.score}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-12 text-slate-400">
+                                        No scores yet. Be the first! 🚀
+                                    </div>
+                                )}
+                            </div>
+
                             <button
-                                onClick={jump}
-                                className="flex items-center justify-center gap-3 w-full py-4 bg-primary text-white rounded-2xl font-bold text-xl hover:bg-primary-hover transition-colors shadow-lg"
+                                onClick={() => setGameState("MENU")}
+                                className="w-full py-4 bg-primary text-white rounded-2xl font-bold text-xl hover:bg-primary-hover transition-colors shadow-lg"
                             >
-                                <Play fill="currentColor" /> Play Now
+                                Back to Menu
                             </button>
                         </motion.div>
                     </motion.div>
@@ -400,21 +574,28 @@ export default function GamePage() {
                         <motion.div
                             initial={{ scale: 0.8 }}
                             animate={{ scale: 1 }}
-                            className="bg-white p-8 rounded-3xl shadow-2xl text-center max-w-sm"
+                            className="bg-white p-8 rounded-3xl shadow-2xl text-center max-w-sm w-full"
                         >
                             <div className="text-6xl mb-4">💔</div>
                             <h2 className="text-4xl font-extrabold mb-2 text-primary">Game Over!</h2>
-                            <p className="text-gray-500 text-xl font-bold mb-6">Score: {score}</p>
+                            <p className="text-slate-400 font-bold mb-1">{playerName}</p>
+                            <p className="text-primary text-4xl font-black mb-6">Score: {score}</p>
 
                             <div className="flex flex-col gap-3">
                                 <button
-                                    onClick={() => setGameState("START")}
+                                    onClick={startGame}
                                     className="flex items-center justify-center gap-3 w-full py-4 bg-primary text-white rounded-2xl font-bold text-xl hover:bg-primary-hover transition-colors shadow-lg"
                                 >
-                                    <RotateCcw /> Retry
+                                    <RotateCcw /> Play Again
+                                </button>
+                                <button
+                                    onClick={() => setGameState("MENU")}
+                                    className="w-full py-3 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-colors"
+                                >
+                                    Main Menu
                                 </button>
                                 <Link href="/">
-                                    <button className="w-full py-3 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-colors">
+                                    <button className="w-full py-3 text-slate-400 font-medium hover:text-slate-600 transition-colors">
                                         Back to Home
                                     </button>
                                 </Link>
