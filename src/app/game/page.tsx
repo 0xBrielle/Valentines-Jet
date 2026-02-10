@@ -11,6 +11,7 @@ import b2 from "../../assets/images/b2.png";
 import c1 from "../../assets/images/c1.png";
 import milk from "../../assets/images/milk.png";
 import fence from "../../assets/images/fence.png";
+import book from "../../assets/images/book.png";
 import gameBg from "../../assets/images/background.jpg";
 
 const GRAVITY = 0.21;
@@ -18,6 +19,7 @@ const JUMP_STRENGTH = -5.5;
 const BASE_OBSTACLE_SPEED = 3;
 const BASE_SPAWN_INTERVAL = 2000;
 const BASE_BG_DURATION = 11;
+const BOSS_MILESTONES = [10, 50, 100, 200, 500];
 
 interface Obstacle {
     id: number;
@@ -52,10 +54,18 @@ export default function GamePage() {
     const [spawnInterval, setSpawnInterval] = useState(2000); // 2 seconds normal
     const [gameOverRain, setGameOverRain] = useState<{ id: number; x: number; duration: number; delay: number; size: number }[]>([]);
 
+    // Boss States
+    const [isBossActive, setIsBossActive] = useState(false);
+    const [bossY, setBossY] = useState(250);
+    const [projectiles, setProjectiles] = useState<{ id: number; x: number; y: number }[]>([]);
+
     const gameContainerRef = useRef<HTMLDivElement>(null);
     const requestRef = useRef<number>(0);
     const lastTimeRef = useRef<number>(0);
     const obstacleTimerRef = useRef<number>(0);
+    const projectileTimerRef = useRef<number>(0);
+    const lastBossMilestoneRef = useRef<number>(0);
+    const bossTimerRef = useRef<number>(0);
 
     // Flapping animation
     useEffect(() => {
@@ -135,6 +145,9 @@ export default function GamePage() {
         setBirdVelocity(0);
         obstacleTimerRef.current = 0;
         setSpawnInterval(Math.random() * 1000 + 1500); // 1.5 - 2.5 seconds
+        setIsBossActive(false);
+        setProjectiles([]);
+        lastBossMilestoneRef.current = 0;
     }, []);
 
     const jump = useCallback(() => {
@@ -271,12 +284,64 @@ export default function GamePage() {
                     cupidRect.top < c.y + 45 &&
                     cupidRect.bottom > c.y
                 ) {
-                    setScore(s => s + 10);
+                    const newScore = score + 10;
+                    setScore(newScore);
                     playCoinSound();
+
+                    // Check for Boss milestone
+                    const nextMilestone = BOSS_MILESTONES.find(m => newScore >= m && lastBossMilestoneRef.current < m);
+                    if (nextMilestone) {
+                        setIsBossActive(true);
+                        lastBossMilestoneRef.current = nextMilestone;
+                        bossTimerRef.current = Date.now();
+                    }
+
                     return { ...c, collected: true };
                 }
                 return c;
             }));
+
+            // Boss Logic
+            if (isBossActive) {
+                // Boss disappears after 10 seconds
+                if (Date.now() - bossTimerRef.current > 10000) {
+                    setIsBossActive(false);
+                }
+
+                // Boss movement (bouncing)
+                setBossY(Math.sin(time / 500) * 150 + 250);
+
+                // Shooting Projectiles
+                projectileTimerRef.current += deltaTime;
+                const shootInterval = score >= 500 ? 600 : score >= 200 ? 800 : score >= 100 ? 1000 : score >= 50 ? 1200 : 1500;
+
+                if (projectileTimerRef.current > shootInterval) {
+                    projectileTimerRef.current = 0;
+                    setProjectiles(prev => [...prev, { id: Date.now(), x: 50, y: bossY + 40 }]);
+                }
+            }
+
+            // Move and Check Projectiles
+            const projectileSpeed = score >= 500 ? 8 : score >= 200 ? 7 : score >= 100 ? 6 : score >= 50 ? 5 : 4;
+            setProjectiles(prev => {
+                const updated = prev
+                    .map(p => ({ ...p, x: p.x + projectileSpeed }))
+                    .filter(p => p.x < window.innerWidth + 100);
+
+                // Collision with Cupid
+                for (const p of updated) {
+                    if (
+                        p.x < cupidRect.right &&
+                        p.x + 60 > cupidRect.left &&
+                        p.y < cupidRect.bottom &&
+                        p.y + 60 > cupidRect.top
+                    ) {
+                        setGameState("GAME_OVER");
+                        saveScore(score);
+                    }
+                }
+                return updated;
+            });
         }
 
         lastTimeRef.current = time;
@@ -302,8 +367,8 @@ export default function GamePage() {
                     backgroundSize: 'auto 100%',
                     backgroundRepeat: 'repeat-x',
                     animation: gameState === 'PLAYING' ? `scrollBackground ${score >= 300 ? BASE_BG_DURATION / 1.6 :
-                            score >= 200 ? BASE_BG_DURATION / 1.4 :
-                                score >= 100 ? BASE_BG_DURATION / 1.2 : BASE_BG_DURATION
+                        score >= 200 ? BASE_BG_DURATION / 1.4 :
+                            score >= 100 ? BASE_BG_DURATION / 1.2 : BASE_BG_DURATION
                         }s linear infinite` : 'none',
                     opacity: 0.8
                 }}
@@ -328,6 +393,16 @@ export default function GamePage() {
                 }
                 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
                     background: #ff4d9d;
+                }
+                .drop-shadow-boss {
+                    filter: drop-shadow(0 0 20px rgba(255, 0, 0, 0.5));
+                }
+                .animate-spin-slow {
+                    animation: spin 3s linear infinite;
+                }
+                @keyframes spin {
+                    from { transform: rotate(0deg); }
+                    to { transform: rotate(360deg); }
                 }
             `}</style>
 
@@ -443,6 +518,32 @@ export default function GamePage() {
                     >
                         <Image src={milk} alt="milk coin" width={45} height={45} className="drop-shadow-glow pointer-events-none select-none" draggable={false} />
                     </motion.div>
+                ))}
+
+                {/* Boss (c1.png) */}
+                <AnimatePresence>
+                    {isBossActive && (
+                        <motion.div
+                            initial={{ x: -200, opacity: 0 }}
+                            animate={{ x: 30, opacity: 1 }}
+                            exit={{ x: -200, opacity: 0 }}
+                            className="absolute z-35"
+                            style={{ top: bossY }}
+                        >
+                            <Image src={c1} alt="Boss" width={120} height={120} className="drop-shadow-boss select-none pointer-events-none" draggable={false} />
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* Projectiles (Books) */}
+                {projectiles.map(p => (
+                    <div
+                        key={p.id}
+                        className="absolute z-35"
+                        style={{ left: p.x, top: p.y }}
+                    >
+                        <Image src={book} alt="book" width={60} height={60} className="drop-shadow-lg animate-spin-slow pointer-events-none select-none" draggable={false} />
+                    </div>
                 ))}
 
                 {/* Game Over Rain */}
