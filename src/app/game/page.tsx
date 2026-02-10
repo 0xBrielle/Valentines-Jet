@@ -12,9 +12,9 @@ import milk from "../../assets/images/milk.png";
 import fence from "../../assets/images/fence.png";
 import gameBg from "../../assets/images/background.jpg";
 
-const GRAVITY = 0.6;
-const JUMP_STRENGTH = -8;
-const OBSTACLE_SPEED = 5;
+const GRAVITY = 0.21; // ~750 px/sec² at 60fps
+const JUMP_STRENGTH = -5.5; // ~330 px/sec at 60fps (~280-320 sweet spot)
+const OBSTACLE_SPEED = 3; // ~180 px/sec (top end of normal)
 
 interface Obstacle {
     id: number;
@@ -38,7 +38,7 @@ export default function GamePage() {
     const [obstacles, setObstacles] = useState<Obstacle[]>([]);
     const [coins, setCoins] = useState<Coin[]>([]);
     const [cupidFrame, setCupidFrame] = useState(b1);
-    const [spawnInterval, setSpawnInterval] = useState(2500); // 2-3 seconds
+    const [spawnInterval, setSpawnInterval] = useState(2000); // 2 seconds normal
 
     const gameContainerRef = useRef<HTMLDivElement>(null);
     const requestRef = useRef<number>(0);
@@ -83,7 +83,7 @@ export default function GamePage() {
             setBirdY(250);
             setBirdVelocity(0);
             obstacleTimerRef.current = 0;
-            setSpawnInterval(Math.random() * 1000 + 2000);
+            setSpawnInterval(Math.random() * 1000 + 1500); // 1.5 - 2.5 seconds
         }
     }, [gameState]);
 
@@ -120,7 +120,7 @@ export default function GamePage() {
             obstacleTimerRef.current += deltaTime;
             if (obstacleTimerRef.current > spawnInterval) {
                 obstacleTimerRef.current = 0;
-                setSpawnInterval(Math.random() * 1000 + 2000); // 2-3 seconds
+                setSpawnInterval(Math.random() * 1000 + 1500); // 1.5 - 2.5 seconds
 
                 const gap = 380; // Significantly wider for 3x Cupid
                 const containerHeight = gameContainerRef.current?.clientHeight || 600;
@@ -235,7 +235,7 @@ export default function GamePage() {
                     backgroundImage: `url(${gameBg.src})`,
                     backgroundSize: 'auto 100%',
                     backgroundRepeat: 'repeat-x',
-                    animation: gameState === 'PLAYING' ? 'scrollBackground 20s linear infinite' : 'none',
+                    animation: gameState === 'PLAYING' ? 'scrollBackground 11s linear infinite' : 'none',
                     opacity: 0.8
                 }}
             />
