@@ -9,24 +9,17 @@ import { ChevronLeft, Play, RotateCcw } from "lucide-react";
 import b1 from "../../assets/images/b1.png";
 import b2 from "../../assets/images/b2.png";
 import milk from "../../assets/images/milk.png";
-import rock from "../../assets/images/rock.png";
-import rock2 from "../../assets/images/rock2.png";
-import rock3 from "../../assets/images/rock3.png";
+import fence from "../../assets/images/fence.png";
 
 const GRAVITY = 0.6;
 const JUMP_STRENGTH = -8;
 const OBSTACLE_SPEED = 5;
-const SPAWN_RATE = 1500; // ms
-
-const ROCKS = [rock, rock2, rock3];
 
 interface Obstacle {
     id: number;
     x: number;
     topHeight: number;
     bottomHeight: number;
-    typeTop: any;
-    typeBottom: any;
 }
 
 interface Coin {
@@ -44,6 +37,7 @@ export default function GamePage() {
     const [obstacles, setObstacles] = useState<Obstacle[]>([]);
     const [coins, setCoins] = useState<Coin[]>([]);
     const [cupidFrame, setCupidFrame] = useState(b1);
+    const [spawnInterval, setSpawnInterval] = useState(2500); // 2-3 seconds
 
     const gameContainerRef = useRef<HTMLDivElement>(null);
     const requestRef = useRef<number>(0);
@@ -58,6 +52,25 @@ export default function GamePage() {
         return () => clearInterval(interval);
     }, []);
 
+    const playCoinSound = () => {
+        try {
+            const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(880, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(1760, ctx.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.1, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.2);
+        } catch (e) {
+            console.warn("Audio Context error", e);
+        }
+    };
+
     const jump = useCallback(() => {
         if (gameState === "PLAYING") {
             setBirdVelocity(JUMP_STRENGTH);
@@ -68,6 +81,8 @@ export default function GamePage() {
             setCoins([]);
             setBirdY(250);
             setBirdVelocity(0);
+            obstacleTimerRef.current = 0;
+            setSpawnInterval(Math.random() * 1000 + 2000);
         }
     }, [gameState]);
 
@@ -91,7 +106,8 @@ export default function GamePage() {
             // Bird Movement
             setBirdY(prev => {
                 const newY = prev + birdVelocity;
-                if (newY < 0 || newY > (gameContainerRef.current?.clientHeight || 600) - 50) {
+                const containerHeight = gameContainerRef.current?.clientHeight || 600;
+                if (newY < 0 || newY > containerHeight - 50) {
                     setGameState("GAME_OVER");
                     return prev;
                 }
@@ -101,11 +117,13 @@ export default function GamePage() {
 
             // Obstacle Spawning
             obstacleTimerRef.current += deltaTime;
-            if (obstacleTimerRef.current > SPAWN_RATE) {
+            if (obstacleTimerRef.current > spawnInterval) {
                 obstacleTimerRef.current = 0;
-                const gap = 200;
+                setSpawnInterval(Math.random() * 1000 + 2000); // 2-3 seconds
+
+                const gap = 220;
                 const containerHeight = gameContainerRef.current?.clientHeight || 600;
-                const minHeight = 50;
+                const minHeight = 80;
                 const topHeight = Math.random() * (containerHeight - gap - minHeight * 2) + minHeight;
 
                 setObstacles(prev => [
@@ -115,18 +133,16 @@ export default function GamePage() {
                         x: window.innerWidth,
                         topHeight,
                         bottomHeight: containerHeight - topHeight - gap,
-                        typeTop: ROCKS[Math.floor(Math.random() * ROCKS.length)],
-                        typeBottom: ROCKS[Math.floor(Math.random() * ROCKS.length)]
                     }
                 ]);
 
-                // Spawn Coin in gap
+                // Spawn Coin inside gap
                 setCoins(prev => [
                     ...prev,
                     {
                         id: Date.now() + 1,
-                        x: window.innerWidth + 50,
-                        y: topHeight + gap / 2 - 15,
+                        x: window.innerWidth + 70,
+                        y: topHeight + gap / 2 - 22,
                         collected: false
                     }
                 ]);
@@ -135,20 +151,21 @@ export default function GamePage() {
             // Move Obstacles and Coins
             setObstacles(prev => prev
                 .map(o => ({ ...o, x: o.x - OBSTACLE_SPEED }))
-                .filter(o => o.x > -100)
+                .filter(o => o.x > -150)
             );
             setCoins(prev => prev
                 .map(c => ({ ...c, x: c.x - OBSTACLE_SPEED }))
-                .filter(c => c.x > -100)
+                .filter(c => c.x > -150)
             );
 
             // Collision Detection
             const cupidRect = { left: 100, top: birdY, right: 150, bottom: birdY + 50 };
+            const containerHeight = gameContainerRef.current?.clientHeight || 600;
 
             setObstacles(prev => {
                 for (const o of prev) {
-                    const topRect = { left: o.x, top: 0, right: o.x + 80, bottom: o.topHeight };
-                    const bottomRect = { left: o.x, top: 600 - o.bottomHeight, right: o.x + 80, bottom: 600 };
+                    const topRect = { left: o.x, top: 0, right: o.x + 100, bottom: o.topHeight };
+                    const bottomRect = { left: o.x, top: containerHeight - o.bottomHeight, right: o.x + 100, bottom: containerHeight };
 
                     if (
                         (cupidRect.left < topRect.right && cupidRect.right > topRect.left && cupidRect.top < topRect.bottom) ||
@@ -162,12 +179,13 @@ export default function GamePage() {
 
             setCoins(prev => prev.map(c => {
                 if (!c.collected &&
-                    cupidRect.left < c.x + 30 &&
+                    cupidRect.left < c.x + 45 &&
                     cupidRect.right > c.x &&
-                    cupidRect.top < c.y + 30 &&
+                    cupidRect.top < c.y + 45 &&
                     cupidRect.bottom > c.y
                 ) {
-                    setScore(s => s + 10);
+                    setScore(s => s + 1);
+                    playCoinSound();
                     return { ...c, collected: true };
                 }
                 return c;
@@ -176,7 +194,7 @@ export default function GamePage() {
 
         lastTimeRef.current = time;
         requestRef.current = requestAnimationFrame(gameLoop);
-    }, [gameState, birdVelocity, birdY]);
+    }, [gameState, birdVelocity, birdY, spawnInterval]);
 
     useEffect(() => {
         if (gameState === "PLAYING") {
@@ -204,7 +222,7 @@ export default function GamePage() {
             </Link>
 
             {/* Score */}
-            <div className="absolute top-6 right-6 z-50 text-3xl font-bold bg-white/50 backdrop-blur-md border border-white/50 px-6 py-2 rounded-2xl shadow-sm">
+            <div className="absolute top-6 right-6 z-50 text-3xl font-bold bg-white/50 backdrop-blur-md border border-white/50 px-6 py-2 rounded-2xl shadow-sm text-primary">
                 Score: {score}
             </div>
 
@@ -229,56 +247,66 @@ export default function GamePage() {
                     />
                 </motion.div>
 
-                {/* Obstacles */}
+                {/* Obstacles (Fences) */}
                 {obstacles.map(o => (
                     <div key={o.id}>
-                        {/* Top Rock */}
+                        {/* Top Fence */}
                         <div
                             className="absolute z-20"
                             style={{
                                 left: o.x,
                                 top: 0,
-                                width: 80,
+                                width: 100,
                                 height: o.topHeight,
                             }}
                         >
                             <div className="relative w-full h-full overflow-hidden flex items-end justify-center">
                                 <div className="absolute top-0 bottom-0 flex flex-col scale-y-[-1]">
-                                    <Image src={o.typeTop} alt="rock" width={80} style={{ height: 'auto' }} />
-                                    <Image src={o.typeTop} alt="rock" width={80} style={{ height: 'auto' }} className="mt-[-10px]" />
-                                    <Image src={o.typeTop} alt="rock" width={80} style={{ height: 'auto' }} className="mt-[-10px]" />
+                                    <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} />
+                                    <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" />
+                                    <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" />
+                                    <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" />
+                                    <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" />
                                 </div>
                             </div>
                         </div>
-                        {/* Bottom Rock */}
+                        {/* Bottom Fence */}
                         <div
                             className="absolute z-20"
                             style={{
                                 left: o.x,
                                 bottom: 0,
-                                width: 80,
+                                width: 100,
                                 height: o.bottomHeight,
                             }}
                         >
                             <div className="relative w-full h-full overflow-hidden flex flex-col">
-                                <Image src={o.typeBottom} alt="rock" width={80} style={{ height: 'auto' }} />
-                                <Image src={o.typeBottom} alt="rock" width={80} style={{ height: 'auto' }} className="mt-[-10px]" />
-                                <Image src={o.typeBottom} alt="rock" width={80} style={{ height: 'auto' }} className="mt-[-10px]" />
+                                <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} />
+                                <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" />
+                                <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" />
+                                <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" />
+                                <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" />
                             </div>
                         </div>
                     </div>
                 ))}
 
-                {/* Coins */}
+                {/* Coins (Milk) */}
                 {coins.map(c => !c.collected && (
                     <motion.div
                         key={c.id}
                         className="absolute z-20"
                         style={{ left: c.x, top: c.y }}
-                        animate={{ y: [c.y, c.y - 10, c.y] }}
-                        transition={{ repeat: Infinity, duration: 1.5 }}
+                        animate={{
+                            y: [c.y, c.y - 12, c.y],
+                            rotate: 360
+                        }}
+                        transition={{
+                            y: { repeat: Infinity, duration: 1.5, ease: "easeInOut" },
+                            rotate: { repeat: Infinity, duration: 3, ease: "linear" }
+                        }}
                     >
-                        <Image src={milk} alt="milk coin" width={35} height={35} />
+                        <Image src={milk} alt="milk coin" width={45} height={45} className="drop-shadow-glow" />
                     </motion.div>
                 ))}
             </div>
@@ -298,7 +326,7 @@ export default function GamePage() {
                         >
                             <h2 className="text-3xl font-extrabold mb-4 text-primary">Cupid's Adventure</h2>
                             <p className="text-gray-600 mb-8 font-medium">
-                                Help Cupid collect milk coins while avoiding the rocks! 🍼✨
+                                Help Cupid collect milk coins while avoiding the fence obstacles! 🍼✨
                                 <br />Press **Space** or **Click** to fly.
                             </p>
                             <button
