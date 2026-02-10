@@ -15,7 +15,7 @@ export default function FlyingCupid() {
     useEffect(() => {
         const interval = setInterval(() => {
             setCurrentFrame((prev) => (prev === b1 ? b2 : b1));
-        }, 200);
+        }, 100); // Faster flapping
         return () => clearInterval(interval);
     }, []);
 
@@ -23,18 +23,21 @@ export default function FlyingCupid() {
     useEffect(() => {
         const fly = async () => {
             while (true) {
-                const startY = Math.random() * 80 + 10; // 10% to 90% height
+                const startY = Math.random() * 80 + 10;
                 const endY = Math.random() * 80 + 10;
-                const duration = Math.random() * 10 + 10; // 10-20 seconds
+                const duration = Math.random() * 2 + 2; // 2-4 seconds (5x faster)
+                const startScale = Math.random() * 0.5 + 0.5; // 0.5 to 1.0
+                const endScale = Math.random() * 0.5 + 0.5;
 
                 // Randomly start from left or right
                 const startFromLeft = Math.random() > 0.5;
                 setDirection(startFromLeft ? 1 : -1);
 
                 await controls.start({
-                    x: startFromLeft ? ["-20%", "120%"] : ["120%", "-20%"],
+                    x: startFromLeft ? ["-30%", "130%"] : ["130%", "-30%"],
                     y: [`${startY}%`, `${endY}%`],
-                    transition: { duration, ease: "linear" },
+                    scale: [startScale, (startScale + endScale) * 1.5 / 2, endScale],
+                    transition: { duration, ease: "easeInOut" },
                 });
             }
         };
