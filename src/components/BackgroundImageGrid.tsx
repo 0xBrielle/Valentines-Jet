@@ -22,43 +22,44 @@ const ALL_IMAGES = [
 ];
 
 export default function BackgroundImageGrid() {
-    // Initialize with the 10 images in order
-    const [currentImages, setCurrentImages] = useState(ALL_IMAGES);
+    // Initialize with first 5 unique images
+    const [currentImages, setCurrentImages] = useState(ALL_IMAGES.slice(0, 5));
     const [flippingIndex, setFlippingIndex] = useState<number | null>(null);
 
     const handleInteraction = (index: number) => {
-        if (flippingIndex !== null) return; // Prevent multiple simultaneous flips
+        if (flippingIndex !== null) return;
 
         setFlippingIndex(index);
 
-        // After half the animation, change the image
         setTimeout(() => {
             setCurrentImages(prev => {
                 const next = [...prev];
-                let randomImg;
-                do {
-                    randomImg = ALL_IMAGES[Math.floor(Math.random() * ALL_IMAGES.length)];
-                } while (randomImg === prev[index] && ALL_IMAGES.length > 1);
+                // Images currently showing that are NOT at the index we are flipping
+                const currentShowingSet = new Set(prev.filter((_, i) => i !== index));
 
-                next[index] = randomImg;
+                // Available images from the full pool of 10 that are not currently showing anywhere else
+                const availablePool = ALL_IMAGES.filter(img => !currentShowingSet.has(img) && img !== prev[index]);
+
+                if (availablePool.length > 0) {
+                    const randomImg = availablePool[Math.floor(Math.random() * availablePool.length)];
+                    next[index] = randomImg;
+                }
                 return next;
             });
         }, 300);
 
-        // Reset flipping state after animation completes
         setTimeout(() => {
             setFlippingIndex(null);
         }, 600);
     };
 
     return (
-        <div className="fixed inset-0 grid grid-cols-5 grid-rows-2 w-full h-full opacity-40 pointer-events-auto z-0 overflow-hidden bg-background">
+        <div className="fixed inset-0 grid grid-cols-5 grid-rows-1 w-full h-screen opacity-80 z-0 overflow-hidden bg-background pointer-events-none">
             {currentImages.map((img, idx) => (
                 <div
                     key={idx}
-                    className="relative w-full h-full p-2"
+                    className="relative w-full h-full p-1 pointer-events-auto" // Added pointer-events-auto here
                     onClick={() => handleInteraction(idx)}
-                    onMouseEnter={() => handleInteraction(idx)}
                 >
                     <motion.div
                         className="w-full h-full relative preserve-3d cursor-pointer"
@@ -66,24 +67,25 @@ export default function BackgroundImageGrid() {
                         transition={{ duration: 0.6, ease: "easeInOut" }}
                         style={{ transformStyle: "preserve-3d" }}
                     >
-                        <div className="absolute inset-0 w-full h-full backface-hidden border-4 border-white shadow-lg overflow-hidden rounded-sm">
+                        {/* Front face */}
+                        <div className="absolute inset-0 w-full h-full backface-hidden border-[6px] border-white shadow-xl overflow-hidden rounded-sm">
                             <Image
                                 src={img}
                                 alt={`Baguio Place ${idx + 1}`}
                                 fill
                                 className="object-cover"
                                 sizes="20vw"
-                                priority={idx < 5}
+                                priority
                             />
                         </div>
 
-                        {/* The "Back" of the card (same image during flip for smoothness, but logic handles swap) */}
+                        {/* Back face */}
                         <div
-                            className="absolute inset-0 w-full h-full backface-hidden border-4 border-white shadow-lg overflow-hidden rounded-sm"
+                            className="absolute inset-0 w-full h-full backface-hidden border-[6px] border-white shadow-xl overflow-hidden rounded-sm"
                             style={{ transform: "rotateY(180deg)" }}
                         >
                             <Image
-                                src={img} // This will be the NEW image after the swap in handleInteraction
+                                src={img}
                                 alt={`Baguio Place ${idx + 1} Back`}
                                 fill
                                 className="object-cover"
@@ -94,14 +96,14 @@ export default function BackgroundImageGrid() {
                 </div>
             ))}
             <style jsx global>{`
-        .preserve-3d {
-          transform-style: preserve-3d;
-        }
-        .backface-hidden {
-          backface-visibility: hidden;
-          -webkit-backface-visibility: hidden;
-        }
-      `}</style>
+                .preserve-3d {
+                    transform-style: preserve-3d;
+                }
+                .backface-hidden {
+                    backface-visibility: hidden;
+                    -webkit-backface-visibility: hidden;
+                }
+            `}</style>
         </div>
     );
 }

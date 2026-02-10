@@ -36,7 +36,7 @@ export default function ValentineCard() {
                         initial={{ opacity: 0, scale: 0.8 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.5 }}
-                        className="p-8 md:p-12 rounded-3xl bg-glass backdrop-blur-md border border-glass-border shadow-2xl text-center max-w-lg w-full"
+                        className="p-8 md:p-12 rounded-3xl bg-glass backdrop-blur-md border border-glass-border shadow-2xl text-center max-w-lg w-full pointer-events-auto"
                     >
                         <motion.div
                             animate={{ scale: [1, 1.2, 1] }}
@@ -75,7 +75,7 @@ export default function ValentineCard() {
                         key="success"
                         initial={{ opacity: 0, scale: 0.5 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="p-8 md:p-12 rounded-3xl bg-glass backdrop-blur-md border border-glass-border shadow-2xl text-center max-w-lg w-full"
+                        className="p-8 md:p-12 rounded-3xl bg-glass backdrop-blur-md border border-glass-border shadow-2xl text-center max-w-lg w-full pointer-events-auto"
                     >
                         <h2 className="text-4xl md:text-5xl font-bold mb-6 text-primary">
                             Yay! ❤️
