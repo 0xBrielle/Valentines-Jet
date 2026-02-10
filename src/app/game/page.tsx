@@ -258,7 +258,7 @@ export default function GamePage() {
 
             // Collision Detection
             // Cupid is 180px wide/tall now. We'll use a slightly inward bounding box for fairness.
-            const cupidRect = { left: 125, top: birdY + 40, right: 235, bottom: birdY + 140 };
+            const cupidRect = { left: 60, top: birdY + 40, right: 170, bottom: birdY + 140 };
             const containerHeight = gameContainerRef.current?.clientHeight || 600;
 
             setObstacles(prev => {
@@ -317,7 +317,8 @@ export default function GamePage() {
 
                 if (projectileTimerRef.current > shootInterval) {
                     projectileTimerRef.current = 0;
-                    setProjectiles(prev => [...prev, { id: Date.now(), x: 50, y: bossY + 40 }]);
+                    const bossX = window.innerWidth - 180;
+                    setProjectiles(prev => [...prev, { id: Date.now(), x: bossX, y: bossY + 40 }]);
                 }
             }
 
@@ -325,8 +326,8 @@ export default function GamePage() {
             const projectileSpeed = score >= 500 ? 8 : score >= 200 ? 7 : score >= 100 ? 6 : score >= 50 ? 5 : 4;
             setProjectiles(prev => {
                 const updated = prev
-                    .map(p => ({ ...p, x: p.x + projectileSpeed }))
-                    .filter(p => p.x < window.innerWidth + 100);
+                    .map(p => ({ ...p, x: p.x - projectileSpeed }))
+                    .filter(p => p.x > -100);
 
                 // Collision with Cupid
                 for (const p of updated) {
@@ -395,7 +396,18 @@ export default function GamePage() {
                     background: #ff4d9d;
                 }
                 .drop-shadow-boss {
-                    filter: drop-shadow(0 0 20px rgba(255, 0, 0, 0.5));
+                    filter: drop-shadow(0 0 25px #ff4500) drop-shadow(0 0 45px #ff0000);
+                    animation: firePulse 1.5s ease-in-out infinite;
+                }
+                .drop-shadow-projectile {
+                    filter: drop-shadow(0 0 15px #ff8c00) drop-shadow(0 0 25px #ff4500);
+                }
+                .drop-shadow-aura {
+                    filter: drop-shadow(0 0 15px rgba(255, 20, 147, 0.6)) drop-shadow(0 0 25px rgba(255, 105, 180, 0.4));
+                }
+                @keyframes firePulse {
+                    0%, 100% { filter: drop-shadow(0 0 25px #ff4500) drop-shadow(0 0 45px #ff0000); transform: scale(1); }
+                    50% { filter: drop-shadow(0 0 35px #ff8c00) drop-shadow(0 0 60px #ff4500); transform: scale(1.05); }
                 }
                 .animate-spin-slow {
                     animation: spin 3s linear infinite;
@@ -432,16 +444,36 @@ export default function GamePage() {
             >
                 {/* Cupid Character */}
                 <motion.div
-                    className="absolute z-30"
-                    style={{ left: 100, top: birdY }}
+                    className="absolute z-30 flex items-center justify-center"
+                    style={{ left: 40, top: birdY }}
                     animate={{ rotate: birdVelocity * 2 }}
                 >
+                    {/* Aura Effect */}
+                    <motion.div
+                        className="absolute inset-[-40px] z-10 rounded-full drop-shadow-aura opacity-60"
+                        animate={{
+                            scale: [1, 1.2, 1],
+                            opacity: [0.4, 0.8, 0.4],
+                            rotate: [0, 360]
+                        }}
+                        transition={{
+                            duration: 3,
+                            repeat: Infinity,
+                            ease: "easeInOut"
+                        }}
+                    >
+                        <div className="absolute top-0 left-1/2 -translate-x-1/2 text-2xl">✨</div>
+                        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 text-2xl">❤️</div>
+                        <div className="absolute left-0 top-1/2 -translate-y-1/2 text-2xl">💖</div>
+                        <div className="absolute right-0 top-1/2 -translate-y-1/2 text-2xl">✨</div>
+                    </motion.div>
+
                     <Image
                         src={cupidFrame}
                         alt="Cupid"
                         width={180}
                         height={180}
-                        className="drop-shadow-lg pointer-events-none select-none"
+                        className="drop-shadow-lg pointer-events-none select-none relative z-20"
                         priority
                         draggable={false}
                     />
@@ -524,13 +556,21 @@ export default function GamePage() {
                 <AnimatePresence>
                     {isBossActive && (
                         <motion.div
-                            initial={{ x: -200, opacity: 0 }}
-                            animate={{ x: 30, opacity: 1 }}
-                            exit={{ x: -200, opacity: 0 }}
+                            initial={{ x: window.innerWidth + 200, opacity: 0 }}
+                            animate={{ x: window.innerWidth - 180, opacity: 1 }}
+                            exit={{ x: window.innerWidth + 200, opacity: 0 }}
                             className="absolute z-35"
                             style={{ top: bossY }}
                         >
-                            <Image src={c1} alt="Boss" width={120} height={120} className="drop-shadow-boss select-none pointer-events-none" draggable={false} />
+                            <div className="relative">
+                                {/* Fire Flare Aura for Boss */}
+                                <motion.div
+                                    className="absolute inset-[-30px] bg-orange-500/20 blur-2xl rounded-full"
+                                    animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0.6, 0.3] }}
+                                    transition={{ duration: 0.8, repeat: Infinity }}
+                                />
+                                <Image src={c1} alt="Boss" width={120} height={120} className="drop-shadow-boss select-none pointer-events-none relative z-10" draggable={false} />
+                            </div>
                         </motion.div>
                     )}
                 </AnimatePresence>
@@ -542,7 +582,7 @@ export default function GamePage() {
                         className="absolute z-35"
                         style={{ left: p.x, top: p.y }}
                     >
-                        <Image src={book} alt="book" width={60} height={60} className="drop-shadow-lg animate-spin-slow pointer-events-none select-none" draggable={false} />
+                        <Image src={book} alt="book" width={60} height={60} className="drop-shadow-projectile animate-spin-slow pointer-events-none select-none" draggable={false} />
                     </div>
                 ))}
 
