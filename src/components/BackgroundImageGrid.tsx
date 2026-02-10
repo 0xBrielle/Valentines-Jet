@@ -73,7 +73,7 @@ export default function BackgroundImageGrid() {
                                 src={img}
                                 alt={`Baguio Place ${idx + 1}`}
                                 fill
-                                className="object-cover"
+                                className="object-contain"
                                 sizes="20vw"
                                 priority
                             />
@@ -88,7 +88,7 @@ export default function BackgroundImageGrid() {
                                 src={img}
                                 alt={`Baguio Place ${idx + 1} Back`}
                                 fill
-                                className="object-cover"
+                                className="object-contain"
                                 sizes="20vw"
                             />
                         </div>
