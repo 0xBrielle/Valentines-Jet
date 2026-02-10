@@ -513,13 +513,10 @@ export default function GamePage() {
             >
                 {/* Cupid Character */}
                 <motion.div
-                    className="absolute z-30 flex items-center justify-center transition-transform duration-75"
-                    style={{
-                        left: 40,
-                        top: 0,
-                        transform: `translate3d(0, ${birdY}px, 0) rotate(${birdVelocity * 2}deg)`,
-                        willChange: 'transform'
-                    }}
+                    className="absolute z-30 flex items-center justify-center"
+                    style={{ left: 40, top: birdY }}
+                    animate={{ rotate: birdVelocity * 2 }}
+                    transition={{ duration: 0.1 }}
                 >
                     {/* Aura Effect - GPU Optimized */}
                     <div
@@ -619,12 +616,7 @@ export default function GamePage() {
                     <motion.div
                         key={c.id}
                         className={`absolute z-20 ${c.isVacuumed ? 'milk-vibrate' : ''}`}
-                        style={{
-                            left: 0,
-                            top: 0,
-                            transform: `translate3d(${c.x}px, ${c.y}px, 0)`,
-                            willChange: 'transform'
-                        }}
+                        style={{ left: c.x, top: c.y }}
                         animate={c.isVacuumed ? {} : {
                             y: [0, -12, 0],
                             rotate: 360
@@ -646,11 +638,7 @@ export default function GamePage() {
                             animate={{ x: window.innerWidth - 180, opacity: 1 }}
                             exit={{ x: window.innerWidth + 200, opacity: 0 }}
                             className="absolute z-35"
-                            style={{
-                                top: 0,
-                                transform: `translate3d(0, ${bossY}px, 0)`,
-                                willChange: 'transform'
-                            }}
+                            style={{ top: bossY }}
                         >
                             <div className="relative">
                                 {/* Fire Flare Aura for Boss */}
@@ -670,12 +658,7 @@ export default function GamePage() {
                     <div
                         key={p.id}
                         className="absolute z-35"
-                        style={{
-                            left: 0,
-                            top: 0,
-                            transform: `translate3d(${p.x}px, ${p.y}px, 0)`,
-                            willChange: 'transform'
-                        }}
+                        style={{ left: p.x, top: p.y }}
                     >
                         <Image
                             src={p.type === "book" ? book : ball}
