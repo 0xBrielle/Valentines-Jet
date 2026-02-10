@@ -93,9 +93,9 @@ export default function ValentineCard() {
                                 Yay! ❤️
                             </h2>
                             <p className="text-lg md:text-xl text-foreground leading-relaxed">
-                                Get ready for cool weather, cuddles, and adventures because we’re heading to Baguio from February 12 – 15 ❤️
+                                Get ready for cool weather, cuddles, and adventures because we’re heading to <strong>Baguio</strong> from <strong>February 12–15</strong> ❤️
                                 <br /><br />
-                                Our stay is all set — just bring yourself, <strong>brielle</strong> and let me take care of the rest.
+                                Our stay is all set — just bring yourself and <strong>Brielle</strong>, and let me take care of the rest.
                             </p>
                             <div className="mt-8 flex justify-center gap-2 text-primary">
                                 {[...Array(5)].map((_, i) => (
