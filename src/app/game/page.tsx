@@ -13,9 +13,11 @@ import milk from "../../assets/images/milk.png";
 import fence from "../../assets/images/fence.png";
 import gameBg from "../../assets/images/background.jpg";
 
-const GRAVITY = 0.21; // ~750 px/sec² at 60fps
-const JUMP_STRENGTH = -5.5; // ~330 px/sec at 60fps (~280-320 sweet spot)
-const OBSTACLE_SPEED = 3; // ~180 px/sec (top end of normal)
+const GRAVITY = 0.21;
+const JUMP_STRENGTH = -5.5;
+const BASE_OBSTACLE_SPEED = 3;
+const BASE_SPAWN_INTERVAL = 2000;
+const BASE_BG_DURATION = 11;
 
 interface Obstacle {
     id: number;
@@ -173,7 +175,11 @@ export default function GamePage() {
 
             // Obstacle Spawning
             obstacleTimerRef.current += deltaTime;
-            if (obstacleTimerRef.current > spawnInterval) {
+            const currentInterval = score >= 300 ? spawnInterval / 1.6 :
+                score >= 200 ? spawnInterval / 1.4 :
+                    score >= 100 ? spawnInterval / 1.2 : spawnInterval;
+
+            if (obstacleTimerRef.current > currentInterval) {
                 obstacleTimerRef.current = 0;
                 setSpawnInterval(Math.random() * 1000 + 1500); // 1.5 - 2.5 seconds
 
@@ -224,12 +230,16 @@ export default function GamePage() {
             }
 
             // Move Obstacles and Coins
+            const currentSpeed = score >= 300 ? BASE_OBSTACLE_SPEED * 1.6 :
+                score >= 200 ? BASE_OBSTACLE_SPEED * 1.4 :
+                    score >= 100 ? BASE_OBSTACLE_SPEED * 1.2 : BASE_OBSTACLE_SPEED;
+
             setObstacles(prev => prev
-                .map(o => ({ ...o, x: o.x - OBSTACLE_SPEED }))
+                .map(o => ({ ...o, x: o.x - currentSpeed }))
                 .filter(o => o.x > -150)
             );
             setCoins(prev => prev
-                .map(c => ({ ...c, x: c.x - OBSTACLE_SPEED }))
+                .map(c => ({ ...c, x: c.x - currentSpeed }))
                 .filter(c => c.x > -150)
             );
 
@@ -261,7 +271,7 @@ export default function GamePage() {
                     cupidRect.top < c.y + 45 &&
                     cupidRect.bottom > c.y
                 ) {
-                    setScore(s => s + 1);
+                    setScore(s => s + 10);
                     playCoinSound();
                     return { ...c, collected: true };
                 }
@@ -291,7 +301,10 @@ export default function GamePage() {
                     backgroundImage: `url(${gameBg.src})`,
                     backgroundSize: 'auto 100%',
                     backgroundRepeat: 'repeat-x',
-                    animation: gameState === 'PLAYING' ? 'scrollBackground 11s linear infinite' : 'none',
+                    animation: gameState === 'PLAYING' ? `scrollBackground ${score >= 300 ? BASE_BG_DURATION / 1.6 :
+                            score >= 200 ? BASE_BG_DURATION / 1.4 :
+                                score >= 100 ? BASE_BG_DURATION / 1.2 : BASE_BG_DURATION
+                        }s linear infinite` : 'none',
                     opacity: 0.8
                 }}
             />
