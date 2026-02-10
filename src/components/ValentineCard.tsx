@@ -10,7 +10,7 @@ export default function ValentineCard() {
     const [isAccepted, setIsAccepted] = useState(false);
     const [scale, setScale] = useState(1);
 
-    const handleNoHover = () => {
+    const handleNoMove = () => {
         const newX = (Math.random() - 0.5) * 400;
         const newY = (Math.random() - 0.5) * 400;
         setNoPosition({ x: newX, y: newY });
@@ -63,7 +63,7 @@ export default function ValentineCard() {
 
                             <motion.button
                                 animate={{ x: noPosition.x, y: noPosition.y }}
-                                onMouseEnter={handleNoHover}
+                                onClick={handleNoMove}
                                 className="px-8 py-3 rounded-full bg-slate-200 text-slate-600 font-medium text-lg"
                             >
                                 No
