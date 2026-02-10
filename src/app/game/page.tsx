@@ -107,7 +107,7 @@ export default function GamePage() {
             setBirdY(prev => {
                 const newY = prev + birdVelocity;
                 const containerHeight = gameContainerRef.current?.clientHeight || 600;
-                if (newY < 0 || newY > containerHeight - 50) {
+                if (newY < -50 || newY > containerHeight - 120) {
                     setGameState("GAME_OVER");
                     return prev;
                 }
@@ -121,7 +121,7 @@ export default function GamePage() {
                 obstacleTimerRef.current = 0;
                 setSpawnInterval(Math.random() * 1000 + 2000); // 2-3 seconds
 
-                const gap = 220;
+                const gap = 380; // Significantly wider for 3x Cupid
                 const containerHeight = gameContainerRef.current?.clientHeight || 600;
                 const minHeight = 80;
                 const topHeight = Math.random() * (containerHeight - gap - minHeight * 2) + minHeight;
@@ -136,13 +136,32 @@ export default function GamePage() {
                     }
                 ]);
 
-                // Spawn Coin inside gap
+                // Spawn Coin: Randomized position (Before, Inside, or After the fence)
+                const spawnChoice = Math.random();
+                let coinX = window.innerWidth;
+                let coinY = topHeight + gap / 2 - 22; // Center of gap by default
+
+                if (spawnChoice < 0.33) {
+                    // Before the obstacle (to the left in world space, so user sees it first)
+                    // Obstacle starts at innerWidth, so before is innerWidth - distance
+                    coinX = window.innerWidth - 300;
+                    coinY = Math.random() * (containerHeight - 150) + 75; // Random height
+                } else if (spawnChoice < 0.66) {
+                    // Inside the gap
+                    coinX = window.innerWidth + 25; // Center of the 100px fence
+                    // coinY remains in the gap
+                } else {
+                    // After the obstacle (further right)
+                    coinX = window.innerWidth + 350;
+                    coinY = Math.random() * (containerHeight - 150) + 75; // Random height
+                }
+
                 setCoins(prev => [
                     ...prev,
                     {
                         id: Date.now() + 1,
-                        x: window.innerWidth + 70,
-                        y: topHeight + gap / 2 - 22,
+                        x: coinX,
+                        y: coinY,
                         collected: false
                     }
                 ]);
@@ -159,7 +178,8 @@ export default function GamePage() {
             );
 
             // Collision Detection
-            const cupidRect = { left: 100, top: birdY, right: 150, bottom: birdY + 50 };
+            // Cupid is 180px wide/tall now. We'll use a slightly inward bounding box for fairness.
+            const cupidRect = { left: 125, top: birdY + 40, right: 235, bottom: birdY + 140 };
             const containerHeight = gameContainerRef.current?.clientHeight || 600;
 
             setObstacles(prev => {
@@ -240,8 +260,8 @@ export default function GamePage() {
                     <Image
                         src={cupidFrame}
                         alt="Cupid"
-                        width={60}
-                        height={60}
+                        width={180}
+                        height={180}
                         className="drop-shadow-lg"
                         priority
                     />
@@ -267,6 +287,11 @@ export default function GamePage() {
                                     <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" />
                                     <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" />
                                     <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" />
+                                    <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" />
+                                    <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" />
+                                    <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" />
+                                    <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" />
+                                    <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" />
                                 </div>
                             </div>
                         </div>
@@ -282,6 +307,11 @@ export default function GamePage() {
                         >
                             <div className="relative w-full h-full overflow-hidden flex flex-col">
                                 <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} />
+                                <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" />
+                                <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" />
+                                <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" />
+                                <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" />
+                                <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" />
                                 <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" />
                                 <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" />
                                 <Image src={fence} alt="fence" width={100} style={{ height: 'auto' }} className="mt-[-1px]" />
@@ -324,7 +354,7 @@ export default function GamePage() {
                             animate={{ scale: 1 }}
                             className="bg-white p-8 rounded-3xl shadow-2xl text-center max-w-sm"
                         >
-                            <h2 className="text-3xl font-extrabold mb-4 text-primary">Cupid's Adventure</h2>
+                            <h2 className="text-3xl font-extrabold mb-4 text-primary">Flappy Brielle</h2>
                             <p className="text-gray-600 mb-8 font-medium">
                                 Help Cupid collect milk coins while avoiding the fence obstacles! 🍼✨
                                 <br />Press **Space** or **Click** to fly.
