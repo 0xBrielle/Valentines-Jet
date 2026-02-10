@@ -26,6 +26,7 @@ interface Obstacle {
     x: number;
     topHeight: number;
     bottomHeight: number;
+    passed?: boolean;
 }
 
 interface Coin {
@@ -33,6 +34,7 @@ interface Coin {
     x: number;
     y: number;
     collected: boolean;
+    isVacuumed?: boolean;
 }
 
 interface ScoreEntry {
@@ -118,7 +120,6 @@ export default function GamePage() {
             console.warn("Audio Context error", e);
         }
     };
-
     // Game Over Rain logic
     useEffect(() => {
         if (gameState === "GAME_OVER") {
@@ -134,6 +135,18 @@ export default function GamePage() {
             setGameOverRain([]);
         }
     }, [gameState]);
+
+    // Reliable Boss Spawning based on Score
+    useEffect(() => {
+        if (gameState !== "PLAYING") return;
+
+        const nextMilestone = BOSS_MILESTONES.find(m => score >= m && lastBossMilestoneRef.current < m);
+        if (nextMilestone) {
+            lastBossMilestoneRef.current = nextMilestone;
+            setIsBossActive(true);
+            bossTimerRef.current = Date.now();
+        }
+    }, [score, gameState]);
 
     const startGame = useCallback(() => {
         setGameState("PLAYING");
@@ -248,12 +261,45 @@ export default function GamePage() {
                     score >= 100 ? BASE_OBSTACLE_SPEED * 1.2 : BASE_OBSTACLE_SPEED;
 
             setObstacles(prev => prev
-                .map(o => ({ ...o, x: o.x - currentSpeed }))
+                .map(o => {
+                    const updatedO = { ...o, x: o.x - currentSpeed };
+                    // Score +1 for passing obstacles
+                    if (!updatedO.passed && updatedO.x + 100 < 40) { // 40 is Cupid's left position
+                        setScore(s => s + 1);
+                        updatedO.passed = true;
+                    }
+                    return updatedO;
+                })
                 .filter(o => o.x > -150)
             );
+
+            // Milk Vacuum Logic
+            const cupidCenterX = 40 + 90; // Cupid left + half-width (180/2)
+            const cupidCenterY = birdY + 90; // birdY + half-height
+
             setCoins(prev => prev
-                .map(c => ({ ...c, x: c.x - currentSpeed }))
-                .filter(c => c.x > -150)
+                .map(c => {
+                    if (c.collected) return c;
+
+                    const milkCenterX = c.x + 22;
+                    const milkCenterY = c.y + 22;
+                    const dist = Math.sqrt(Math.pow(milkCenterX - cupidCenterX, 2) + Math.pow(milkCenterY - cupidCenterY, 2));
+
+                    // Vacuum range: 300px
+                    if (dist < 300 || c.isVacuumed) {
+                        const angle = Math.atan2(cupidCenterY - milkCenterY, cupidCenterX - milkCenterX);
+                        const vacuumSpeed = currentSpeed + 4;
+                        return {
+                            ...c,
+                            x: c.x + Math.cos(angle) * vacuumSpeed,
+                            y: c.y + Math.sin(angle) * vacuumSpeed,
+                            isVacuumed: true
+                        };
+                    }
+
+                    return { ...c, x: c.x - currentSpeed };
+                })
+                .filter(c => c.x > -150 && c.x < window.innerWidth + 400)
             );
 
             // Collision Detection
@@ -278,39 +324,23 @@ export default function GamePage() {
             });
 
             setCoins(prev => {
-                let milestoneReached = false;
-                const updated = prev.map(c => {
-                    // Tighter circular collision for milk (milk is 45x45, using radius 15 for core)
+                return prev.map(c => {
+                    if (c.collected) return c;
+
                     const milkCenterX = c.x + 22;
                     const milkCenterY = c.y + 22;
-                    const cupidCenterX = (cupidRect.left + cupidRect.right) / 2;
-                    const cupidCenterY = (cupidRect.top + cupidRect.bottom) / 2;
+                    const cupidCenterX = 40 + 90;
+                    const cupidCenterY = birdY + 90;
 
                     const dist = Math.sqrt(Math.pow(milkCenterX - cupidCenterX, 2) + Math.pow(milkCenterY - cupidCenterY, 2));
 
-                    if (!c.collected && dist < 50) { // 50px radius for collection (very fair)
-                        setScore(s => {
-                            const newScore = s + 10;
-                            // Check for Boss milestone using functional update logic
-                            const nextMilestone = BOSS_MILESTONES.find(m => newScore >= m && lastBossMilestoneRef.current < m);
-                            if (nextMilestone) {
-                                milestoneReached = true;
-                                lastBossMilestoneRef.current = nextMilestone;
-                            }
-                            return newScore;
-                        });
+                    if (dist < 70) { // Slightly larger collection radius because of vacuum speed
+                        setScore(s => s + 10);
                         playCoinSound();
                         return { ...c, collected: true };
                     }
                     return c;
                 });
-
-                if (milestoneReached) {
-                    setIsBossActive(true);
-                    bossTimerRef.current = Date.now();
-                }
-
-                return updated;
             });
 
             // Boss Logic
@@ -427,8 +457,11 @@ export default function GamePage() {
                     animation: milkGlow 2s ease-in-out infinite;
                 }
                 @keyframes milkGlow {
-                    0%, 100% { filter: drop-shadow(0 0 10px #32cd32) drop-shadow(0 0 20px #00ff00); }
-                    50% { filter: drop-shadow(0 0 20px #7cfc00) drop-shadow(0 0 35px #32cd32); }
+                    0%, 100% { filter: drop-shadow(0 0 10px #32cd32) drop-shadow(0 0 20px #00ff00); transform: translate(0, 0); }
+                    50% { filter: drop-shadow(0 0 20px #7cfc00) drop-shadow(0 0 35px #32cd32); transform: translate(2px, -2px); }
+                }
+                .milk-vibrate {
+                    animation: milkGlow 0.1s infinite !important;
                 }
                 @keyframes firePulse {
                     0%, 100% { filter: drop-shadow(0 0 25px #ff4500) drop-shadow(0 0 45px #ff0000); transform: scale(1); }
@@ -579,9 +612,9 @@ export default function GamePage() {
                 {coins.map(c => !c.collected && (
                     <motion.div
                         key={c.id}
-                        className="absolute z-20"
+                        className={`absolute z-20 ${c.isVacuumed ? 'milk-vibrate' : ''}`}
                         style={{ left: c.x, top: c.y }}
-                        animate={{
+                        animate={c.isVacuumed ? {} : {
                             y: [c.y, c.y - 12, c.y],
                             rotate: 360
                         }}
