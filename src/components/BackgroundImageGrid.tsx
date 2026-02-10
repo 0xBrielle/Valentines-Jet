@@ -25,13 +25,9 @@ const PLACES = [
 ];
 
 export default function BackgroundImageGrid() {
-    // We want 15 slots. Let's initialize them by repeating some images.
+    // Show exactly 8 unique images from our pool of 10
     const initialImages = useMemo(() => {
-        const arr = [...PLACES];
-        while (arr.length < 15) {
-            arr.push(PLACES[Math.floor(Math.random() * PLACES.length)]);
-        }
-        return arr;
+        return [...PLACES].sort(() => Math.random() - 0.5).slice(0, 8);
     }, []);
 
     const [currentImages, setCurrentImages] = useState(initialImages);
@@ -44,13 +40,17 @@ export default function BackgroundImageGrid() {
         setTimeout(() => {
             setCurrentImages(prev => {
                 const next = [...prev];
-                // Select a random image from the pool of 10 that isn't the same as the current one
-                let randomImg;
-                do {
-                    randomImg = PLACES[Math.floor(Math.random() * PLACES.length)];
-                } while (randomImg === prev[index] && PLACES.length > 1);
+                // Images currently showing everywhere else
+                const currentlyShowing = new Set(prev);
 
-                next[index] = randomImg;
+                // Available images from the 10 that are NOT currently showing
+                const availablePool = PLACES.filter(img => !currentlyShowing.has(img));
+
+                if (availablePool.length > 0) {
+                    // Pick one from the 2 "hidden" images
+                    const randomImg = availablePool[Math.floor(Math.random() * availablePool.length)];
+                    next[index] = randomImg;
+                }
                 return next;
             });
         }, 300);
@@ -61,35 +61,34 @@ export default function BackgroundImageGrid() {
     };
 
     return (
-        <div className="fixed inset-0 w-full h-full p-2 overflow-y-auto z-0 opacity-80 bg-background pointer-events-none">
-            <div className="columns-2 md:columns-3 lg:columns-4 gap-2 w-full">
+        <div className="fixed inset-0 w-full h-screen p-0.5 z-0 opacity-80 bg-background pointer-events-none overflow-hidden">
+            {/* 2x4 on mobile, 4x2 on desktop - fills screen, 0 duplicates */}
+            <div className="grid grid-cols-2 md:grid-cols-4 grid-rows-4 md:grid-rows-2 gap-0.5 w-full h-full">
                 {currentImages.map((img, idx) => (
                     <div
                         key={idx}
-                        className="mb-2 break-inside-avoid pointer-events-auto"
+                        className="relative pointer-events-auto h-full w-full"
                         onClick={() => handleInteraction(idx)}
                     >
                         <motion.div
-                            className="relative w-full preserve-3d cursor-pointer"
+                            className="relative w-full h-full preserve-3d cursor-pointer"
                             animate={{ rotateY: flippingIndex === idx ? 180 : 0 }}
                             transition={{ duration: 0.6, ease: "easeInOut" }}
                             style={{ transformStyle: "preserve-3d" }}
                         >
-                            {/* Front face */}
-                            <div className="relative w-full backface-hidden border-4 border-white shadow-lg rounded-sm overflow-hidden">
+                            <div className="absolute inset-0 w-full h-full backface-hidden border border-white/40 shadow-sm overflow-hidden">
                                 <Image
                                     src={img}
                                     alt={`Collage Item ${idx + 1}`}
-                                    width={500}
-                                    height={500}
-                                    className="w-full h-auto object-cover"
+                                    fill
+                                    className="object-cover"
+                                    sizes="(max-width: 768px) 50vw, 25vw"
                                     priority={idx < 4}
                                 />
                             </div>
 
-                            {/* Back face (will show the same image until the state update mid-flip) */}
                             <div
-                                className="absolute inset-0 w-full h-full backface-hidden border-4 border-white shadow-lg rounded-sm overflow-hidden"
+                                className="absolute inset-0 w-full h-full backface-hidden border border-white/40 shadow-sm overflow-hidden"
                                 style={{ transform: "rotateY(180deg)" }}
                             >
                                 <Image
@@ -97,6 +96,7 @@ export default function BackgroundImageGrid() {
                                     alt={`Collage Item ${idx + 1} Back`}
                                     fill
                                     className="object-cover"
+                                    sizes="(max-width: 768px) 50vw, 25vw"
                                 />
                             </div>
                         </motion.div>
@@ -104,14 +104,14 @@ export default function BackgroundImageGrid() {
                 ))}
             </div>
             <style jsx global>{`
-        .preserve-3d {
-          transform-style: preserve-3d;
-        }
-        .backface-hidden {
-          backface-visibility: hidden;
-          -webkit-backface-visibility: hidden;
-        }
-      `}</style>
+                .preserve-3d {
+                    transform-style: preserve-3d;
+                }
+                .backface-hidden {
+                    backface-visibility: hidden;
+                    -webkit-backface-visibility: hidden;
+                }
+            `}</style>
         </div>
     );
 }
