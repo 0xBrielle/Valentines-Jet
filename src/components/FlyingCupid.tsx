@@ -55,7 +55,7 @@ export default function FlyingCupid({ delay = 0 }: FlyingCupidProps) {
     return (
         <motion.div
             animate={controls}
-            className="fixed pointer-events-none z-[5] w-24 md:w-40 h-auto"
+            className="fixed pointer-events-none z-[50] w-24 md:w-40 h-auto"
             style={{ top: 0, left: 0 }}
             initial={{ x: "-50vw", y: "0vh" }}
         >
