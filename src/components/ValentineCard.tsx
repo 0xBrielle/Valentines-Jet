@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
 import { Heart } from "lucide-react";
+import Link from "next/link";
 
 import ImageRain from "./ImageRain";
 
@@ -66,6 +67,16 @@ export default function ValentineCard() {
                                 >
                                     Yes! ✨
                                 </motion.button>
+
+                                <Link href="/game">
+                                    <motion.button
+                                        whileHover={{ scale: 1.1 }}
+                                        whileTap={{ scale: 0.9 }}
+                                        className="px-8 py-4 rounded-full bg-accent text-white font-bold text-lg shadow-lg hover:opacity-90 transition-opacity"
+                                    >
+                                        Play a Game 🎮
+                                    </motion.button>
+                                </Link>
 
                                 <motion.button
                                     animate={{ x: noPosition.x, y: noPosition.y }}
