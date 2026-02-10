@@ -8,6 +8,7 @@ import { ChevronLeft, Play, RotateCcw, Trophy, User } from "lucide-react";
 
 import b1 from "../../assets/images/b1.png";
 import b2 from "../../assets/images/b2.png";
+import c1 from "../../assets/images/c1.png";
 import milk from "../../assets/images/milk.png";
 import fence from "../../assets/images/fence.png";
 import gameBg from "../../assets/images/background.jpg";
@@ -47,6 +48,7 @@ export default function GamePage() {
     const [coins, setCoins] = useState<Coin[]>([]);
     const [cupidFrame, setCupidFrame] = useState(b1);
     const [spawnInterval, setSpawnInterval] = useState(2000); // 2 seconds normal
+    const [gameOverRain, setGameOverRain] = useState<{ id: number; x: number; duration: number; delay: number; size: number }[]>([]);
 
     const gameContainerRef = useRef<HTMLDivElement>(null);
     const requestRef = useRef<number>(0);
@@ -105,8 +107,25 @@ export default function GamePage() {
         }
     };
 
+    // Game Over Rain logic
+    useEffect(() => {
+        if (gameState === "GAME_OVER") {
+            const newRain = Array.from({ length: 50 }).map((_, i) => ({
+                id: Date.now() + i,
+                x: Math.random() * 100,
+                duration: Math.random() * 2 + 2,
+                delay: Math.random() * 2,
+                size: Math.random() * 60 + 40
+            }));
+            setGameOverRain(newRain);
+        } else {
+            setGameOverRain([]);
+        }
+    }, [gameState]);
+
     const startGame = useCallback(() => {
         setGameState("PLAYING");
+        setGameOverRain([]);
         setScore(0);
         setObstacles([]);
         setCoins([]);
@@ -412,6 +431,22 @@ export default function GamePage() {
                         <Image src={milk} alt="milk coin" width={45} height={45} className="drop-shadow-glow pointer-events-none select-none" draggable={false} />
                     </motion.div>
                 ))}
+
+                {/* Game Over Rain */}
+                <AnimatePresence>
+                    {gameOverRain.map((item) => (
+                        <motion.div
+                            key={item.id}
+                            initial={{ y: -100, x: `${item.x}vw`, opacity: 0 }}
+                            animate={{ y: "110vh", opacity: [0, 1, 1, 0] }}
+                            transition={{ duration: item.duration, delay: item.delay, ease: "linear" }}
+                            className="fixed z-50 pointer-events-none"
+                            style={{ width: item.size }}
+                        >
+                            <Image src={c1} alt="raining heart" width={item.size} height={item.size} className="w-full h-auto drop-shadow-lg" />
+                        </motion.div>
+                    ))}
+                </AnimatePresence>
             </div>
 
             {/* Overlays */}
@@ -576,7 +611,9 @@ export default function GamePage() {
                             animate={{ scale: 1 }}
                             className="bg-white p-8 rounded-3xl shadow-2xl text-center max-w-sm w-full"
                         >
-                            <div className="text-6xl mb-4">💔</div>
+                            <div className="flex justify-center mb-4">
+                                <Image src={c1} alt="Love" width={100} height={100} className="drop-shadow-lg" />
+                            </div>
                             <h2 className="text-4xl font-extrabold mb-2 text-primary">Game Over!</h2>
                             <p className="text-slate-400 font-bold mb-1">{playerName}</p>
                             <p className="text-primary text-4xl font-black mb-6">Score: {score}</p>
