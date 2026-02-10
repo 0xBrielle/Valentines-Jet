@@ -19,7 +19,7 @@ const JUMP_STRENGTH = -5.5;
 const BASE_OBSTACLE_SPEED = 3;
 const BASE_SPAWN_INTERVAL = 2000;
 const BASE_BG_DURATION = 11;
-const BOSS_MILESTONES = [10, 50, 100, 200, 500];
+const BOSS_MILESTONES = [50, 100, 200, 500, 1000];
 
 interface Obstacle {
     id: number;
@@ -313,7 +313,7 @@ export default function GamePage() {
 
                 // Shooting Projectiles
                 projectileTimerRef.current += deltaTime;
-                const shootInterval = score >= 500 ? 600 : score >= 200 ? 800 : score >= 100 ? 1000 : score >= 50 ? 1200 : 1500;
+                const shootInterval = score >= 1000 ? 500 : score >= 500 ? 600 : score >= 200 ? 800 : score >= 100 ? 1000 : 1200;
 
                 if (projectileTimerRef.current > shootInterval) {
                     projectileTimerRef.current = 0;
@@ -323,7 +323,7 @@ export default function GamePage() {
             }
 
             // Move and Check Projectiles
-            const projectileSpeed = score >= 500 ? 8 : score >= 200 ? 7 : score >= 100 ? 6 : score >= 50 ? 5 : 4;
+            const projectileSpeed = score >= 1000 ? 9 : score >= 500 ? 8 : score >= 200 ? 7 : score >= 100 ? 6 : 5;
             setProjectiles(prev => {
                 const updated = prev
                     .map(p => ({ ...p, x: p.x - projectileSpeed }))
