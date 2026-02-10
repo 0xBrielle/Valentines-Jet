@@ -29,17 +29,11 @@ export default function ValentineCard() {
 
     const handleYes = () => {
         setIsAccepted(true);
-        confetti({
-            particleCount: 150,
-            spread: 70,
-            origin: { y: 0.6 },
-            colors: ["#ff4d6d", "#ff8fa3", "#c9184a", "#ffffff"],
-        });
     };
 
     return (
         <>
-            <ImageRain triggerCount={rainTrigger} />
+            <ImageRain triggerCount={rainTrigger} isSuccess={isAccepted} />
             <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
                 <AnimatePresence mode="wait">
                     {!isAccepted ? (
